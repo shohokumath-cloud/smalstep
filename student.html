@@ -283,22 +283,31 @@
             position: relative; 
         }
         
-        /* 外部HTMLを美しく合体させるためのコンテナエリア */
         .question-content-area {
             display: flex;
             align-items: center;
             width: 100%;
             justify-content: space-between;
             z-index: 2;
+            gap: 8px;
         }
 
-        /* 分数表示・レイアウト用の共通CSS定義 */
+        .question-text-side {
+            font-size: 1.3rem;
+            color: var(--slate-800);
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        /* システム側が自動構築する分数穴埋めレイアウト用CSS */
         .fraction-container { 
             display: inline-flex; 
             flex-direction: column; 
             align-items: center; 
             vertical-align: middle; 
-            margin: 0 6px;
+            margin-left: 10px;
         }
         .frac-line { 
             width: 50px; 
@@ -309,7 +318,7 @@
         }
 
         .answer-box {
-            width: 55px; /* 分数レイアウトに最適な細さに調整 */
+            width: 55px; 
             padding: 10px 4px;
             border: 2px solid var(--slate-200);
             background: var(--slate-50);
@@ -428,6 +437,9 @@
 
         .unit-val { font-size: 0.75rem; color: var(--slate-400); font-weight: 400; margin-left: 2px; }
         .back-home-container { margin-top: auto; width: 100%; max-width: 300px; margin-left: auto; margin-right: auto; }
+        
+        /* MathJax表示のインライン最適化 */
+        .mjx-container { display: inline-block !important; margin: 0 !important; vertical-align: middle; }
     </style>
 </head>
 <body>
@@ -644,7 +656,7 @@
         loadPrintQuestions();
     }
 
-    // 複数入力箱 & TeX自動パースアセンブラ関数
+    // AIパーサー：テキスト形式を検知してTeX分数化 ＆ 箱の自動生成を行うコアロジック
     async function loadPrintQuestions() {
         document.getElementById('study-print-name').innerText = currentPrintName;
         document.getElementById('score100Area').innerHTML = ''; 
@@ -679,37 +691,69 @@
                 const item = document.createElement('div');
                 item.className = 'question-item';
                 
-                // カードの枠組みを生成。外部HTMLをそのまま合体
+                let rawText = el.innerHTML;
+                
+                // 【超重要】問題ファイルにTeXタグが付いていない場合、システムが全自動でTeX(MathJax)化
+                if (!rawText.includes('\\(') && !rawText.includes('$')) {
+                    // 問題番号 (1) などを抽出
+                    let numMatch = rawText.match(/^(\(\d+\))\s*/);
+                    let qNumStr = numMatch ? numMatch[1] : `(${idx + 1})`;
+                    let qBody = numMatch ? rawText.replace(numMatch[0], '') : rawText;
+                    
+                    // 「数字/数字」という文字列パターンを自動で TeX の \frac{分子}{分母} に変換
+                    qBody = qBody.replace(/(\d+)\/(\d+)/g, '\\frac{$1}{$2}');
+                    
+                    // MathJax認識用のデリミタで挟む
+                    rawText = `<span style="font-weight:bold; color:var(--slate-700); margin-right:6px;">${qNumStr}</span> \\(${qBody}\\)`;
+                }
+
+                // 属性データのチェック
+                const ansNum = el.getAttribute('data-ans-num');
+                const ansDen = el.getAttribute('data-ans-den');
+                const ansSingle = el.getAttribute('data-ans');
+
+                let inputHtml = '';
+                let correctAnswers = [];
+
+                // データの持ち方に応じて、入力箱のレイアウトを自動生成して合体
+                if (ansNum !== null && ansDen !== null) {
+                    // 分数入力モード（分子・分母に分けて入力する）
+                    inputHtml = `
+                        <div class="fraction-container">
+                            <input type="number" class="answer-box num-input" data-correct="${ansNum}">
+                            <div class="frac-line"></div>
+                            <input type="number" class="answer-box den-input" data-correct="${ansDen}">
+                        </div>
+                    `;
+                    correctAnswers = [parseFloat(ansNum), parseFloat(ansDen)];
+                } else if (ansSingle !== null) {
+                    // 整数・小数入力モード（箱は1つだけ）
+                    inputHtml = `
+                        <div style="margin-left:10px;">
+                            <input type="number" class="answer-box single-input" data-correct="${ansSingle}">
+                        </div>
+                    `;
+                    correctAnswers = [parseFloat(ansSingle)];
+                }
+
                 item.innerHTML = `
                     <div class="circle-container" id="circle-container-${idx}"></div>
                     <div class="question-content-area">
-                        ${el.innerHTML}
+                        <div class="question-text-side">${rawText}</div>
+                        <div class="answer-wrapper-side">${inputHtml}</div>
                     </div>
                 `;
                 container.appendChild(item);
 
-                // 外部HTML内にレイアウトされているすべての入力箱（input）を動的に自動認識
-                const cardInputs = item.querySelectorAll('input');
-                const correctAnswers = [];
-                
-                cardInputs.forEach((input) => {
-                    // 共通のスタイルと入力モードをインジェクション
-                    input.className = 'answer-box';
-                    input.setAttribute('type', 'number');
-                    input.setAttribute('inputmode', 'numeric');
-                    input.setAttribute('step', 'any');
-                    // 正解を抽出
-                    correctAnswers.push(parseFloat(input.getAttribute('data-ans')));
-                });
-
-                // 問題ごとに「入力オブジェクトのリスト」と「正解のリスト」をセットで管理
+                // 生成されたインプット要素を配列に登録して追跡
+                const cardInputs = item.querySelectorAll('.answer-box');
                 currentQuestions.push({
                     inputs: cardInputs,
                     answers: correctAnswers
                 });
             });
 
-            // 動的に読み込んだTeX数式をMathJaxに美しく強制レンダリングさせる命令
+            // MathJaxへ動的変換の即時リクエストを発火
             if (window.MathJax && window.MathJax.typesetPromise) {
                 window.MathJax.typesetPromise([container]);
             }
@@ -729,13 +773,12 @@
         }
     }
 
-    // 多重入力対応 答え合わせロジック
     document.getElementById('btn-check-answers').addEventListener('click', async () => {
         let correctCount = 0;
         let results = [];
 
         currentQuestions.forEach((qData) => {
-            let isCardAllCorrect = true; // この1問が完全正解かどうか
+            let isCardAllCorrect = true; 
 
             qData.inputs.forEach((input, inputIdx) => {
                 const userAns = parseFloat(input.value);
@@ -747,7 +790,7 @@
                     input.classList.add('is-correct');
                 } else {
                     input.classList.add('is-incorrect');
-                    isCardAllCorrect = false; // 1つでも間違えたらアウト
+                    isCardAllCorrect = false; 
                 }
                 input.disabled = true;
             });
@@ -758,7 +801,6 @@
             results.push(isCardAllCorrect);
         });
 
-        // 手書き風赤ペン丸つけアニメーションの順次実行
         for (let i = 0; i < currentQuestions.length; i++) {
             if (results[i]) {
                 const circleArea = document.getElementById(`circle-container-${i}`);
@@ -801,7 +843,7 @@
                 timestamp: serverTimestamp()
             });
         } catch(e) {
-            console.error("ログ保存エラー:", e);
+            console.error("logsコレクションへの保存をスキップまたはエラー:", e);
         }
     }
 
