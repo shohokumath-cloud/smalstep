@@ -34,12 +34,13 @@
             --slate-600: #475569;
             --slate-700: #334155;
             --slate-800: #1e293b;
+            --red-pen: rgba(255, 50, 50, 0.6); 
             --btn-gradient: linear-gradient(135deg, #22d3ee 0%, #2563eb 100%); 
         }
 
         body {
             font-family: 'Inter', 'Noto Sans JP', sans-serif;
-            background: #e2e8f0; /* 教員用は少し落ち着いたトーンの背景 */
+            background: #e2e8f0; 
             color: var(--slate-800);
             margin: 0;
             padding: 0;
@@ -99,7 +100,6 @@
             max-width: 100%;
         }
 
-        /* データ表示エリアを独立してスクロールさせるための指定 */
         .table-responsive {
             flex: 1;
             overflow-y: auto;
@@ -117,7 +117,7 @@
             to { opacity: 1; transform: translateY(0); }
         }
 
-        /* 共通ボタンコンポーネント */
+        /* 大元のボタンコンポーネント */
         .btn {
             background: var(--btn-gradient); 
             color: white;
@@ -140,15 +140,19 @@
         .btn:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(14, 165, 233, 0.35); filter: brightness(1.04); }
         .btn:active { transform: translateY(0); }
         
+        /* 修正点：文字サイズに合わせて幅自動(auto)化、パディング調整、影をリセット */
         .btn-secondary {
-            background: var(--slate-100);
-            color: var(--slate-700);
-            box-shadow: none;
-            font-size: 1rem;
-            padding: 10px 24px;
-            border-radius: 12px;
+            background: var(--slate-100) !important;
+            color: var(--slate-700) !important;
+            box-shadow: none !important;
+            font-size: 0.95rem !important;
+            padding: 10px 20px !important;
+            border-radius: 12px !important;
+            width: auto !important;
+            font-weight: 600 !important;
+            display: inline-flex !important;
         }
-        .btn-secondary:hover { background: var(--slate-200); box-shadow: none; transform: translateY(-2px); }
+        .btn-secondary:hover { background: var(--slate-200) !important; transform: translateY(-1px) !important; }
 
         /* 教員用ヘッダーデザイン */
         .panel-header {
@@ -169,7 +173,6 @@
             font-weight: 500;
         }
 
-        /* ホームメニューグリッド */
         .menu-grid {
             display: flex;
             flex-direction: column;
@@ -189,14 +192,16 @@
             display: flex;
             align-items: center;
             gap: 16px;
+            flex: 1; /* 横幅を柔軟に確保 */
         }
         .page-title-side h2 {
             font-size: 1.6rem;
             color: var(--slate-800);
             font-weight: 800;
+            white-space: nowrap; /* タイトルの不自然な改行を防止 */
         }
 
-        /* モダンデザインの生徒切り替えピッカー（セレクトボックス） */
+        /* 生徒切り替えピッカー */
         .student-picker {
             padding: 10px 36px 10px 16px;
             font-size: 1.1rem;
@@ -249,14 +254,12 @@
         .data-table tr:last-child td { border-bottom: none; }
         .data-table tr:hover td { background: var(--slate-50); }
         
-        /* 列幅・配色の個別セッティング */
         .td-name-left { text-align: left !important; padding-left: 24px !important; font-weight: 700 !important; color: var(--slate-800) !important; width: 140px; }
         .td-date { font-weight: 600 !important; color: var(--slate-800) !important; width: 100px; }
         .td-time { width: 100px; }
         .td-count { width: 100px; color: #475569 !important; font-weight: 600 !important; }
         .td-rate { width: 100px; border-right: 1px solid var(--slate-200) !important; color: #0284c7 !important; font-weight: 700 !important; }
         
-        /* クラス概要用のバッジ表示 */
         .td-badge-print { width: 120px; }
         .print-badge {
             background: var(--primary-soft);
@@ -363,7 +366,7 @@
                         <th class="td-time">総学習時間</th>
                         <th class="td-count">総取り組み枚数</th>
                         <th class="td-rate">通算平均正答率</th>
-                        <th style="text-align:left; padding-left:24px;">備考・アクティビティログ</th>
+                        <th style="text-align: left; padding-left: 24px;">備考・アクティビティログ</th>
                     </tr>
                 </thead>
                 <tbody id="class-summary-tbody">
@@ -392,14 +395,13 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
-    let fetchedUsersMap = {}; // Firebaseから取得した全生徒オブジェクトをメモリ保持するマップ
+    let fetchedUsersMap = {}; 
 
     function showScreen(screenId) {
         document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
         document.getElementById(screenId).classList.add('active');
     }
 
-    // 各画面への遷移イベントの初期バインド
     document.getElementById('btn-nav-records').addEventListener('click', async () => {
         showScreen('screen-records');
         await ensureUsersFetched();
@@ -417,9 +419,8 @@
         });
     });
 
-    // Firebaseの「users」コレクションから全ドキュメントを安全に一括フェッチ・同期するキャッシュ機構
     async function ensureUsersFetched() {
-        if (Object.keys(fetchedUsersMap).length > 0) return; // すでにキャッシュがあればスキップ
+        if (Object.keys(fetchedUsersMap).length > 0) return; 
 
         try {
             const querySnapshot = await getDocs(collection(db, "users"));
@@ -429,19 +430,17 @@
                 fetchedUsersMap[doc.id] = doc.data();
             });
 
-            buildStudentSelector(); // ピッカーオプションの動的組み立て
+            buildStudentSelector(); 
         } catch (e) {
             console.error("Firebaseデータフェッチエラー:", e);
-            alert("データのフェッチに失敗しました。認証設定等を確認してください。");
+            alert("データのフェッチに失敗しました。");
         }
     }
 
-    // 生徒選択プルダウン（ピッカー）の動的生成
     function buildStudentSelector() {
         const selector = document.getElementById('selector-student');
         selector.innerHTML = '<option value="">-- 生徒を選択してください --</option>';
 
-        // 辞書順（五十音順）にソートして並び替え
         const sortedIds = Object.keys(fetchedUsersMap).sort((a, b) => {
             const nameA = fetchedUsersMap[a].name || "";
             const nameB = fetchedUsersMap[b].name || "";
@@ -457,7 +456,6 @@
         });
     }
 
-    // ピッカー変更時：選択された特定の生徒のタイムライン（きろく）を組み立てるリスナー
     document.getElementById('selector-student').addEventListener('change', (e) => {
         const selectedId = e.target.value;
         const tbody = document.getElementById('student-timeline-tbody');
@@ -475,7 +473,6 @@
 
         tbody.innerHTML = "";
         
-        // 仕様準拠：生徒用アプリと完全一致する「古い順（昇順）」での積み上げレンダリング
         const sortedDates = Object.keys(statsMap).sort((a, b) => a.localeCompare(b));
 
         sortedDates.forEach(date => {
@@ -531,14 +528,12 @@
             tbody.appendChild(tr);
         });
 
-        // テーブル描画直後、最下部（最新記録）へ滑らかにスクロール自動追従
         const scrollContainer = document.querySelector('#screen-records .table-responsive');
         if (scrollContainer) {
             setTimeout(() => { scrollContainer.scrollTop = scrollContainer.scrollHeight; }, 100);
         }
     });
 
-    // 全体概要（クラス一覧）マトリクステーブルの動的ビルド
     function renderClassSummaryTable() {
         const tbody = document.getElementById('class-summary-tbody');
         tbody.innerHTML = "";
@@ -549,7 +544,6 @@
             return;
         }
 
-        // 五十音順にソートして並び替え
         userIds.sort((a, b) => {
             const nameA = fetchedUsersMap[a].name || "";
             const nameB = fetchedUsersMap[b].name || "";
@@ -559,7 +553,6 @@
         userIds.forEach(id => {
             const u = fetchedUsersMap[id];
             
-            // 各生徒の通算累計データの算出
             let totalDuration = u.total_duration || 0;
             let totalCount = 0;
             let grandQuestions = 0;
@@ -569,7 +562,7 @@
             if (u.daily_stats) {
                 const dates = Object.keys(u.daily_stats).sort();
                 if(dates.length > 0) {
-                    lastActiveDate = dates[dates.length - 1].split('-').slice(1).join('/'); // 最新活動日
+                    lastActiveDate = dates[dates.length - 1].split('-').slice(1).join('/'); 
                 }
                 
                 for (let d in u.daily_stats) {
