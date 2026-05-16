@@ -5,6 +5,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>学習アプリ | 生徒用</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=Noto+Sans+JP:wght@300;400;500;700&display=swap" rel="stylesheet">
+    
+    <script>
+        window.MathJax = {
+            tex: { inlineMath: [['$', '$'], ['\\(', '\\)']] },
+            chtml: { displayAlign: 'left' }
+        };
+    </script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
     <style>
         :root {
             --primary: #3b82f6; /* モダンなブルー */
@@ -25,7 +34,7 @@
             --slate-600: #475569;
             --slate-700: #334155;
             --slate-800: #1e293b;
-            --red-pen: rgba(255, 50, 50, 0.6); /* 手書き風赤ペンの色 */
+            --red-pen: rgba(255, 50, 50, 0.6); 
         }
 
         body {
@@ -226,7 +235,6 @@
         }
         .study-title { font-size: 1.75rem; color: var(--slate-800); font-weight: 800; }
         
-        /* 100点はなまる用の絶対配置コンテナ */
         .score-100-container {
             position: absolute;
             right: 0;
@@ -272,29 +280,40 @@
             justify-content: space-between;
             box-shadow: 0 2px 8px rgba(0,0,0,0.02);
             box-sizing: border-box;
-            position: relative; /* 手書き丸の基準点 */
-        }
-        .question-text { 
-            font-size: 1.3rem; 
-            font-weight: 500; 
-            color: var(--slate-800);
-            white-space: nowrap;
-            z-index: 2;
+            position: relative; 
         }
         
-        .answer-wrapper {
-            position: relative;
+        /* 外部HTMLを美しく合体させるためのコンテナエリア */
+        .question-content-area {
             display: flex;
             align-items: center;
+            width: 100%;
+            justify-content: space-between;
             z-index: 2;
         }
 
+        /* 分数表示・レイアウト用の共通CSS定義 */
+        .fraction-container { 
+            display: inline-flex; 
+            flex-direction: column; 
+            align-items: center; 
+            vertical-align: middle; 
+            margin: 0 6px;
+        }
+        .frac-line { 
+            width: 50px; 
+            height: 2px; 
+            background: var(--slate-700); 
+            margin: 5px 0; 
+            border-radius: 1px;
+        }
+
         .answer-box {
-            width: 90px;
-            padding: 12px;
+            width: 55px; /* 分数レイアウトに最適な細さに調整 */
+            padding: 10px 4px;
             border: 2px solid var(--slate-200);
             background: var(--slate-50);
-            border-radius: 12px;
+            border-radius: 10px;
             font-size: 1.3rem;
             text-align: center;
             font-weight: 600;
@@ -302,12 +321,15 @@
             color: var(--primary);
             transition: all 0.2s;
             box-sizing: border-box;
+            -moz-appearance: textfield;
         }
+        .answer-box::-webkit-outer-spin-button,
+        .answer-box::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+        
         .answer-box:focus { border-color: var(--primary); background: white; box-shadow: 0 0 0 3px var(--primary-soft); }
         .answer-box.is-correct { border-color: var(--success) !important; background-color: #f0fdf4; color: #166534; }
         .answer-box.is-incorrect { border-color: var(--danger) !important; background-color: #fef2f2; color: #991b1b; }
 
-        /* 手書き風丸つけコンテナ（問題カード全体を覆う仕様に変更） */
         .circle-container { 
             position: absolute; 
             top: 0; left: 0; width: 100%; height: 100%;
@@ -320,7 +342,6 @@
             padding: 4px;
         }
 
-        /* 手書きアニメーションCSS */
         .handwritten-path {
             fill: none;
             stroke: var(--red-pen);
@@ -523,7 +544,6 @@
     let sessionPrintsData = {};
     let sessionPrintNumbers = []; 
 
-    // 手書き風ベクターグラフィックデータ
     const circleSvg = `<svg viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet" style="width:100%; height:100%;"><path class="handwritten-path" d="M85,50 C85,75 65,90 50,90 C25,90 10,70 10,50 C10,25 30,10 50,10 C70,10 90,30 92,55" /></svg>`;
     const score100Svg = `<svg viewBox="0 0 200 100" preserveAspectRatio="xMidYMid meet" style="width:100%; height:100%;"><path class="handwritten-path draw-100" d="M40,20 L40,80" /><path class="handwritten-path draw-100" d="M90,50 C90,30 80,20 70,20 C60,20 50,35 50,50 C50,65 60,80 70,80 C80,80 90,65 90,50" /><path class="handwritten-path draw-100" d="M140,50 C140,30 130,20 120,20 C110,20 100,35 100,50 C100,65 110,80 120,80 C130,80 140,65 140,50" /><path class="handwritten-path draw-100" d="M30,90 Q100,85 160,95" /></svg>`;
 
@@ -624,9 +644,10 @@
         loadPrintQuestions();
     }
 
+    // 複数入力箱 & TeX自動パースアセンブラ関数
     async function loadPrintQuestions() {
         document.getElementById('study-print-name').innerText = currentPrintName;
-        document.getElementById('score100Area').innerHTML = ''; // 100点エリアの初期化
+        document.getElementById('score100Area').innerHTML = ''; 
         
         const container = document.getElementById('question-list-container');
         container.innerHTML = "<div style='grid-column: span 2; text-align:center; padding:20px; color:var(--slate-400);'>問題を読み込み中...</div>";
@@ -655,31 +676,52 @@
             currentQuestions = [];
 
             qElements.forEach((el, idx) => {
-                const qText = el.innerHTML;
-                const answer = parseFloat(el.getAttribute('data-ans'));
-                
-                currentQuestions.push({ q: qText, answer: answer });
-
                 const item = document.createElement('div');
                 item.className = 'question-item';
+                
+                // カードの枠組みを生成。外部HTMLをそのまま合体
                 item.innerHTML = `
                     <div class="circle-container" id="circle-container-${idx}"></div>
-                    <div class="question-text">${qText}</div>
-                    <div class="answer-wrapper">
-                        <input type="number" class="answer-box q-ans-input" data-index="${idx}" inputmode="numeric" step="any">
+                    <div class="question-content-area">
+                        ${el.innerHTML}
                     </div>
                 `;
                 container.appendChild(item);
+
+                // 外部HTML内にレイアウトされているすべての入力箱（input）を動的に自動認識
+                const cardInputs = item.querySelectorAll('input');
+                const correctAnswers = [];
+                
+                cardInputs.forEach((input) => {
+                    // 共通のスタイルと入力モードをインジェクション
+                    input.className = 'answer-box';
+                    input.setAttribute('type', 'number');
+                    input.setAttribute('inputmode', 'numeric');
+                    input.setAttribute('step', 'any');
+                    // 正解を抽出
+                    correctAnswers.push(parseFloat(input.getAttribute('data-ans')));
+                });
+
+                // 問題ごとに「入力オブジェクトのリスト」と「正解のリスト」をセットで管理
+                currentQuestions.push({
+                    inputs: cardInputs,
+                    answers: correctAnswers
+                });
             });
+
+            // 動的に読み込んだTeX数式をMathJaxに美しく強制レンダリングさせる命令
+            if (window.MathJax && window.MathJax.typesetPromise) {
+                window.MathJax.typesetPromise([container]);
+            }
 
             document.getElementById('btn-check-answers').style.display = 'block';
             document.getElementById('btn-next-print').style.display = 'none';
             document.getElementById('btn-end-study').style.display = 'block'; 
             
             setTimeout(() => {
-                const firstInput = document.querySelector('.q-ans-input');
+                const firstInput = document.querySelector('.answer-box');
                 if(firstInput) firstInput.focus();
-            }, 100);
+            }, 150);
 
         } catch (e) {
             console.error(e);
@@ -687,44 +729,48 @@
         }
     }
 
-    // 答え合わせロジック（手書き風赤ペン・ハナマル演出付き）
+    // 多重入力対応 答え合わせロジック
     document.getElementById('btn-check-answers').addEventListener('click', async () => {
-        const inputs = document.querySelectorAll('.q-ans-input');
         let correctCount = 0;
         let results = [];
 
-        // 1. まず全問のテキスト色・ボーダー枠の正誤切り替え
-        inputs.forEach((input, idx) => {
-            const userAns = parseFloat(input.value);
-            const correctAns = currentQuestions[idx].answer;
+        currentQuestions.forEach((qData) => {
+            let isCardAllCorrect = true; // この1問が完全正解かどうか
 
-            input.classList.remove('is-correct', 'is-incorrect');
+            qData.inputs.forEach((input, inputIdx) => {
+                const userAns = parseFloat(input.value);
+                const correctAns = qData.answers[inputIdx];
 
-            const isProblemCorrect = (userAns === correctAns);
-            if (isProblemCorrect) {
+                input.classList.remove('is-correct', 'is-incorrect');
+
+                if (userAns === correctAns) {
+                    input.classList.add('is-correct');
+                } else {
+                    input.classList.add('is-incorrect');
+                    isCardAllCorrect = false; // 1つでも間違えたらアウト
+                }
+                input.disabled = true;
+            });
+
+            if (isCardAllCorrect) {
                 correctCount++;
-                input.classList.add('is-correct');
-            } else {
-                input.classList.add('is-incorrect');
             }
-            input.disabled = true;
-            results.push(isProblemCorrect);
+            results.push(isCardAllCorrect);
         });
 
-        // 2. 正解した問題に対して、手書き風の丸を順番に自動アニメーション描画
+        // 手書き風赤ペン丸つけアニメーションの順次実行
         for (let i = 0; i < currentQuestions.length; i++) {
             if (results[i]) {
                 const circleArea = document.getElementById(`circle-container-${i}`);
                 if (circleArea) {
                     circleArea.innerHTML = circleSvg;
                 }
-                // 全問正解（満点）かつ最後の問題の丸つけが終わった瞬間、100点はなまるをトリガー
                 if (i === (currentQuestions.length - 1) && correctCount === currentQuestions.length) {
                     setTimeout(() => {
                         document.getElementById('score100Area').innerHTML = score100Svg;
                     }, 200);
                 }
-                await sleep(200); // 次の丸が描かれるまでの心地よいディレイ
+                await sleep(200); 
             }
         }
 
