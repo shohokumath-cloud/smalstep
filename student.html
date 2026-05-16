@@ -16,9 +16,9 @@
 
     <style>
         :root {
-            --primary: #3b82f6; /* モダンなブルー */
+            --primary: #0ea5e9; /* 洗練された水色ベース */
             --primary-hover: #2563eb;
-            --primary-soft: #eff6ff;
+            --primary-soft: #f0f9ff;
             --success: #10b981;
             --success-soft: #d1fae5;
             --warning: #f59e0b;
@@ -35,6 +35,7 @@
             --slate-700: #334155;
             --slate-800: #1e293b;
             --red-pen: rgba(255, 50, 50, 0.6); 
+            --btn-gradient: linear-gradient(135deg, #22d3ee 0%, #2563eb 100%); /* ゲージと同一の水色グラデーション */
         }
 
         body {
@@ -43,17 +44,18 @@
             color: var(--slate-800);
             margin: 0;
             padding: 0;
-            min-height: 100vh;
+            height: 100vh; /* 画面に追従 */
             display: flex;
             justify-content: center;
             align-items: center;
+            overflow: hidden; /* 仕様変更：全体の無駄なスクロールを完全排除 */
         }
 
         .app-container {
             width: 100%;
             max-width: 1200px; 
             background: var(--card);
-            min-height: 100vh;
+            height: 100vh; /* 画面いっぱいに縦幅を固定 */
             display: flex;
             flex-direction: column;
             position: relative;
@@ -62,7 +64,7 @@
 
         @media (min-width: 768px) {
             .app-container {
-                min-height: 90vh;
+                height: 90vh;
                 border-radius: 24px;
                 margin: 20px;
                 box-shadow: 0 10px 40px -10px rgba(0,0,0,0.08);
@@ -78,6 +80,8 @@
             animation: fadeIn 0.4s ease-out;
             width: 100%;
             box-sizing: border-box;
+            height: 100%;
+            overflow: hidden; /* 基本は画面固定 */
         }
 
         .screen.active {
@@ -90,8 +94,15 @@
             margin-right: auto;
         }
 
+        /* 記録画面と復習メニューだけは内部コンテンツを滑らかにスクロールさせる */
         #screen-records, #screen-review {
             max-width: 100%;
+        }
+        #screen-records .table-responsive, 
+        #screen-review .review-scroll-area {
+            flex: 1;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
         }
 
         @keyframes fadeIn {
@@ -99,8 +110,11 @@
             to { opacity: 1; transform: translateY(0); }
         }
 
+        /* 共通コンポーネント */
+        h1, h2, h3 { margin: 0; font-weight: 700; letter-spacing: -0.02em; }
+        
         .btn {
-            background: var(--primary);
+            background: var(--btn-gradient); /* 仕様変更：水色〜青のグラデーションに変更 */
             color: white;
             border: none;
             padding: 16px 28px;
@@ -110,11 +124,11 @@
             cursor: pointer;
             transition: all 0.2s ease;
             text-align: center;
-            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.25);
+            box-shadow: 0 4px 14px rgba(14, 165, 233, 0.25);
             width: 100%;
             box-sizing: border-box;
         }
-        .btn:hover { background: var(--primary-hover); transform: translateY(-2px); box-shadow: 0 6px 16px rgba(59, 130, 246, 0.3); }
+        .btn:hover { transform: translateY(-2px); box-shadow: 0 6px 18px rgba(14, 165, 233, 0.35); filter: brightness(1.04); }
         .btn:active { transform: translateY(0); }
         
         .btn-secondary {
@@ -122,7 +136,7 @@
             color: var(--slate-700);
             box-shadow: none;
         }
-        .btn-secondary:hover { background: var(--slate-200); box-shadow: none; }
+        .btn-secondary:hover { background: var(--slate-200); box-shadow: none; filter: none; transform: translateY(-2px); }
         
         /* 1. ログイン画面 */
         .login-header { text-align: center; margin-bottom: 48px; margin-top: 40px; }
@@ -181,27 +195,22 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            margin-bottom: 36px;
+            margin-bottom: 40px;
         }
+        
+        /* 新設計：SVG端丸グラデーションリングプログレスバー */
         .circle-gauge {
             width: 260px;
             height: 260px;
-            border-radius: 50%;
-            background: conic-gradient(var(--primary) 0%, var(--slate-100) 0%);
+            position: relative;
             display: flex;
             align-items: center;
             justify-content: center;
-            position: relative;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.04);
-            transition: background 0.8s cubic-bezier(0.4, 0, 0.2, 1);
         }
-        .circle-gauge::before {
-            content: '';
+        .circle-gauge svg {
             position: absolute;
-            width: 236px; 
-            height: 236px;
-            background: var(--card);
-            border-radius: 50%;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
         }
         .circle-inner {
             position: relative;
@@ -212,17 +221,8 @@
             align-items: center;
             justify-content: center;
         }
-        .print-label { font-size: 0.85rem; color: var(--slate-400); font-weight: 600; margin-bottom: -4px; letter-spacing: 0.05em; }
-        .print-number { font-size: 4.5rem; font-weight: 700; color: var(--slate-800); line-height: 1.1; letter-spacing: -0.02em; }
-        .total-prints { 
-            font-size: 1.1rem; 
-            color: var(--primary); 
-            font-weight: 600; 
-            margin-top: 4px;
-            background: var(--primary-soft);
-            padding: 4px 16px;
-            border-radius: 20px;
-        }
+        /* 仕様変更：現在のプリントラベル、枚数カウントは廃止し、問題番号のみをダイナミックに配置 */
+        .print-number { font-size: 5rem; font-weight: 700; color: var(--slate-800); line-height: 1; letter-spacing: -0.02em; }
 
         /* 3. 今日の学習画面 */
         .study-header { 
@@ -281,8 +281,8 @@
         .key-btn:active { background: var(--slate-300); transform: scale(0.96); }
         .key-btn.enter-key {
             background: var(--primary-soft);
-            color: var(--primary);
-            border-color: var(--primary);
+            color: #0284c7;
+            border-color: #0ea5e9;
         }
         .key-btn.enter-key:hover { background: var(--primary); color: white; }
 
@@ -368,12 +368,12 @@
             text-align: center;
             font-weight: 600;
             outline: none;
-            color: var(--primary);
+            color: #0284c7;
             transition: all 0.2s;
             box-sizing: border-box;
         }
         
-        .answer-box:focus { border-color: var(--primary); background: white; box-shadow: 0 0 0 3px var(--primary-soft); }
+        .answer-box:focus { border-color: #0ea5e9; background: white; box-shadow: 0 0 0 3px var(--primary-soft); }
         .answer-box.is-correct { border-color: var(--success) !important; background-color: #f0fdf4; color: #166534; }
         .answer-box.is-incorrect { border-color: var(--danger) !important; background-color: #fef2f2; color: #991b1b; }
 
@@ -411,13 +411,12 @@
         
         .table-responsive {
             width: 100%;
-            overflow-x: auto;
-            -webkit-overflow-scrolling: touch; 
             border-radius: 16px;
             border: 1px solid var(--slate-200);
             background: white;
             box-shadow: 0 4px 12px rgba(0,0,0,0.03);
             margin-bottom: 24px;
+            box-sizing: border-box;
         }
 
         table.history-table { 
@@ -448,7 +447,7 @@
         
         .td-date { width: 90px; font-weight: 600 !important; color: var(--slate-800) !important; }
         .td-time { width: 90px; }
-        .td-count { width: 90px; border-right: 1px solid var(--slate-200) !important; color: var(--primary) !important; font-weight: 600 !important; }
+        .td-count { width: 90px; border-right: 1px solid var(--slate-200) !important; color: #0284c7 !important; font-weight: 600 !important; }
         
         .td-progress-graph { padding: 0 !important; width: auto; position: relative; }
         .graph-wrapper { display: flex; height: 100%; width: 100%; min-height: 52px; }
@@ -465,17 +464,17 @@
         .progress-bar-fill {
             position: absolute;
             top: 8px; bottom: 8px;
-            background: var(--primary); 
+            background: var(--btn-gradient); /* 記録の進捗グラフバーも水色グラデーションに統一 */
             border-radius: 4px;
             display: flex; align-items: center; justify-content: center;
             color: white; font-size: 0.75rem; font-weight: 600;
-            box-shadow: 0 2px 4px rgba(59, 130, 246, 0.25);
+            box-shadow: 0 2px 4px rgba(14, 165, 233, 0.25);
             transition: all 0.5s ease;
         }
 
         .unit-val { font-size: 0.75rem; color: var(--slate-400); font-weight: 400; margin-left: 2px; }
 
-        /* 修正点：ホームに戻るコンテナの最前面化設定（z-indexの競合を解決） */
+        /* ホームに戻るコンテナの最前面化設定（z-index競合バグを完全駆逐） */
         .back-home-container { 
             margin-top: 20px; 
             width: 100%; 
@@ -483,7 +482,7 @@
             margin-left: auto; 
             margin-right: auto; 
             position: relative; 
-            z-index: 999; /* 重なり順を最高位にしてクリック不可バグを完全に修正 */
+            z-index: 9999; /* 重なり順位を最高位に引き上げクリックを100%可能に */
         }
 
         /* 5. 復習メニュー画面用スタイル */
@@ -517,12 +516,11 @@
             box-sizing: border-box;
         }
 
-        /* 新設：正答率・未トライ状況に応じた動的カラーデザイン */
         .review-item-btn.disabled {
             background: #e2e8f0 !important; /* 未トライ：グレーダウン */
             border-color: #cbd5e1 !important;
             cursor: not-allowed !important;
-            pointer-events: none !important; /* ボタンを押せなくする */
+            pointer-events: none !important; 
             opacity: 0.55;
         }
         .review-item-btn.disabled .review-item-name { color: #94a3b8 !important; }
@@ -551,6 +549,7 @@
             border-radius: 6px;
             font-weight: 600;
         }
+        .mjx-container { display: inline-block !important; margin: 0 !important; vertical-align: middle; }
     </style>
 </head>
 <body>
@@ -577,10 +576,20 @@
         
         <div class="gauge-container">
             <div class="circle-gauge" id="progress-gauge">
+                <svg width="260" height="260" viewBox="0 0 260 260">
+                    <defs>
+                        <linearGradient id="cyan-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" stop-color="#22d3ee" />
+                            <stop offset="100%" stop-color="#2563eb" />
+                        </linearGradient>
+                    </defs>
+                    <circle cx="130" cy="130" r="110" stroke="#f1f5f9" stroke-width="16" fill="none" />
+                    <circle id="gauge-ring" cx="130" cy="130" r="110" stroke="url(#cyan-gradient)" stroke-width="16" fill="none"
+                            stroke-linecap="round" transform="rotate(-90 130 130)" stroke-dasharray="691.15" stroke-dashoffset="691.15"
+                            style="transition: stroke-dashoffset 0.8s cubic-bezier(0.4, 0, 0.2, 1);" />
+                </svg>
                 <div class="circle-inner">
-                    <div class="print-label">現在のプリント</div>
                     <div class="print-number" id="txt-current-print">A1</div>
-                    <div class="total-prints" id="txt-total-prints">0枚</div>
                 </div>
             </div>
         </div>
@@ -659,7 +668,7 @@
             <button class="btn btn-secondary" id="btn-review-to-home" style="width:auto; padding:10px 24px; border-radius:12px;">ホームに戻る</button>
         </div>
         
-        <div style="flex:1; overflow-y:auto; padding-right:4px;">
+        <div class="review-scroll-area">
             <h3>Aシリーズ (A1 - A50)</h3>
             <div class="review-grid" id="review-grid-a"></div>
             
@@ -756,19 +765,20 @@
         showScreen('screen-login');
     });
 
+    // 修正点：新設計のSVGプログレスバー用にオフセットアニメーションを再実装
     function updateHomeGauge() {
         document.getElementById('txt-current-print').innerText = currentPrintName;
         const numPart = parseInt(currentPrintName.match(/\d+/)[0]);
         const percent = Math.min(100, Math.round((numPart / 50) * 100));
         
-        let totalPrintsCount = 0;
-        if (currentUser && currentUser.daily_stats) {
-            for (let dateKey in currentUser.daily_stats) {
-                totalPrintsCount += (currentUser.daily_stats[dateKey].count || 0);
-            }
+        // SVGの周長を割り出して、strokeDashoffsetを数式制御
+        const circumference = 2 * Math.PI * 110; // 半径110 = 約691.15
+        const offset = circumference - (percent / 100) * circumference;
+        
+        const ring = document.getElementById('gauge-ring');
+        if (ring) {
+            ring.style.strokeDashoffset = offset;
         }
-        document.getElementById('txt-total-prints').innerText = `${totalPrintsCount}枚`;
-        document.getElementById('progress-gauge').style.background = `conic-gradient(var(--primary) ${percent}%, var(--slate-100) ${percent}%)`;
     }
 
     function insertTextAtCursor(input, text) {
@@ -828,7 +838,6 @@
         showScreen('screen-home');
     });
 
-    // 記録画面のホームに戻るボタンイベントの登録
     document.getElementById('btn-record-back').addEventListener('click', () => {
         showScreen('screen-home');
     });
@@ -847,7 +856,6 @@
         return rates;
     }
 
-    // 仕様変更点：未トライ問題のグレー無効化 ＆ 正答率別の背景クラス割り当て
     function renderReviewMenu() {
         const rates = getLatestPrintRates();
         
@@ -863,17 +871,16 @@
                 const cell = document.createElement('div');
                 cell.className = 'review-item-btn';
                 
-                // 動的な状態（カラー・pointer-events）の判定クラス追加
                 if (!hasRate) {
-                    cell.classList.add('disabled'); // 未トライ：グレーかつ押せなくする
+                    cell.classList.add('disabled'); 
                 } else if (rate === 100) {
-                    cell.classList.add('perfect'); // 100%: 緑
+                    cell.classList.add('perfect'); 
                 } else if (rate >= 80) {
-                    cell.classList.add('high');    // 80%以上: 青
+                    cell.classList.add('high');    
                 } else if (rate >= 50) {
-                    cell.classList.add('mid');     // 50%以上: 黄
+                    cell.classList.add('mid');     
                 } else {
-                    cell.classList.add('low');     // 50%未満: 赤
+                    cell.classList.add('low');     
                 }
 
                 cell.innerHTML = `
@@ -1174,7 +1181,12 @@
         showScreen('screen-review');
     });
 
+    // 仕様変更点：「学習を終了する」ボタンクリック時の確認アラート制御を追加
     document.getElementById('btn-end-study').addEventListener('click', async () => {
+        if (!confirm("学習を終了してホームに戻りますか？\n（ここまでの学習データは完全に保存されます）")) {
+            return; // キャンセル時は処理を中断
+        }
+
         const elapsedMin = Math.max(1, Math.round((Date.now() - studyStartTime) / 1000 / 60));
         const now = new Date();
         const dateKey = `${now.getFullYear()}-${(now.getMonth()+1).toString().padStart(2,'0')}-${now.getDate().toString().padStart(2,'0')}`;
