@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Education Tech Lab | 教員用管理ダッシュボード</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Noto+Sans+JP:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-soft: #eef2ff;
+            --success: #10b981;
+            --success-soft: #d1fae5;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --slate-50: #f8fafc;
+            --slate-100: #f1f5f9;
+            --slate-200: #e2e8f0;
+            --slate-400: #94a3b8;
+            --slate-600: #475569;
+            --slate-800: #1e293b;
+            --card: #ffffff;
+        }
+
+        body { 
+            font-family: 'Inter', 'Noto Sans JP', sans-serif; 
+            background: #f1f5f9; 
+            color: var(--slate-800); 
+            margin: 0; 
+            padding: 32px 24px; 
+            line-height: 1.5; 
+        }
+        .container { max-width: 1400px; margin: 0 auto; }
+        header { 
+            margin-bottom: 32px; 
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--card);
+            padding: 20px 32px;
+            border-radius: 16px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.02);
+        }
+        h1 { font-size: 1.5rem; font-weight: 900; letter-spacing: -0.025em; margin: 0; color: var(--slate-800); }
+        h1 span { font-weight: 400; color: var(--primary); margin-left: 8px; font-size: 1.1rem; border-left: 2px solid var(--slate-200); padding-left: 12px; }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 24px;
+        }
+        
+        @media (min-width: 1024px) {
+            .dashboard-grid {
+                grid-template-columns: 320px 1fr;
+            }
+        }
+
+        .card { 
+            background: var(--card); 
+            border-radius: 16px; 
+            border: 1px solid var(--slate-200); 
+            box-shadow: 0 4px 12px rgba(0,0,0,0.03); 
+            overflow: hidden; 
+        }
+        
+        .card-header {
+            padding: 20px;
+            border-bottom: 1px solid var(--slate-200);
+            font-weight: 700;
+            background: var(--slate-50);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        /* 生徒リスト */
+        .student-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            max-height: 600px;
+            overflow-y: auto;
+        }
+        .student-item {
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--slate-100);
+            cursor: pointer;
+            transition: background 0.2s;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .student-item:hover { background: var(--primary-soft); }
+        .student-item.active { background: var(--primary-soft); border-left: 4px solid var(--primary); font-weight: 700; }
+        .student-badge { background: var(--slate-100); padding: 4px 8px; border-radius: 6px; font-size: 0.8rem; font-weight: 600; }
+
+        /* 個人分析用スタイル */
+        .personal-selector { 
+            padding: 24px; 
+            background: var(--slate-50); 
+            border-bottom: 1px solid var(--slate-200); 
+            display: flex; 
+            align-items: center; 
+            gap: 32px; 
+            flex-wrap: wrap; 
+        }
+        .total-time-display { 
+            background: white; 
+            padding: 12px 24px; 
+            border-radius: 12px; 
+            border: 1px solid var(--slate-200); 
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02); 
+        }
+        .total-time-label { font-size: 0.75rem; color: var(--slate-400); font-weight: 700; text-transform: uppercase; margin-bottom: 4px; }
+        .total-time-value { font-size: 1.5rem; font-weight: 900; color: var(--primary); }
+
+        table { width: 100%; border-collapse: collapse; } 
+        th { padding: 16px 20px; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--slate-600); background: var(--slate-50); border-bottom: 1px solid var(--slate-200); font-weight: 700; text-align: center; }
+        td { padding: 18px 20px; border-bottom: 1px solid var(--slate-200); font-size: 0.9rem; text-align: center; }
+
+        .td-date { width: 100px; color: var(--slate-800); font-weight: 700; }
+        .td-time { width: 120px; font-weight: 800; font-size: 1.1rem; color: var(--slate-700); }
+        .td-count { width: 100px; font-weight: 800; color: var(--primary); }
+        .td-rate { width: 120px; }
+        .unit-val { font-size: 0.75rem; color: var(--slate-400); font-weight: 400; margin-left: 2px; }
+        
+        .badge { padding: 4px 8px; border-radius: 6px; font-size: 0.8rem; font-weight: 700; }
+        .badge-success { background: var(--success-soft); color: var(--success); }
+        
+        .print-chips { display: flex; flex-wrap: wrap; gap: 6px; justify-content: flex-start; }
+        .chip { background: var(--slate-100); padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 600; color: var(--slate-700); border: 1px solid var(--slate-200); }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>Education Tech Lab<span>教員側 アプリ管理ダッシュボード</span></h1>
+    </header>
+
+    <div class="dashboard-grid">
+        <!-- 左側：生徒一覧 -->
+        <div class="card">
+            <div class="card-header">生徒一覧 (<span id="user-count">0</span>名)</div>
+            <ul class="student-list" id="student-list-container">
+                <li style="padding: 20px; text-align: center; color: var(--slate-400);">読み込み中...</li>
+            </ul>
+        </div>
+
+        <!-- 右側：選択した生徒のタイムライン詳細 -->
+        <div id="screen3" class="card">
+            <div class="personal-selector">
+                <div>
+                    <h2 style="font-size: 1.25rem; font-weight: 900;" id="selected-student-name">生徒を選択してください</h2>
+                    <div style="font-size: 0.85rem; color: var(--slate-600); margin-top: 4px;">現在の進捗: <span id="selected-student-progress" style="font-weight:700; color:var(--primary);">-</span></div>
+                </div>
+                <div class="total-time-display">
+                    <div class="total-time-label">全期間の累計学習時間</div>
+                    <div class="total-time-value" id="totalDurationVal">0 <span style="font-size: 0.8rem; font-weight: 400; color: var(--slate-800);">分</span></div>
+                </div>
+            </div>
+            <div style="overflow-x: auto;">
+                <table class="timeline-table">
+                    <thead>
+                        <tr>
+                            <th class="td-date">日付</th>
+                            <th class="td-time">その日の学習時間</th>
+                            <th class="td-count">解いた枚数</th>
+                            <th class="td-rate">通算正答率</th>
+                            <th style="text-align: left; padding-left: 20px;">取り組んだプリント内訳 (正答率)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="timelineBody">
+                        <tr>
+                            <td colspan="5" style="padding: 40px; text-align: center; color: var(--slate-400);">左のリストから生徒を選択すると、詳細な学習履歴がここに表示されます。</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+    const firebaseConfig = {
+        apiKey: "AIzaSyAak6or7yu6bneqE4MphiLkaqfJlP7TcBQ",
+        authDomain: "sh0h0kumath.firebaseapp.com",
+        projectId: "sh0h0kumath",
+        storageBucket: "sh0h0kumath.firebasestorage.app",
+        messagingSenderId: "872420201764",
+        appId: "1:872420201764:web:3c303e7e43bf01d69d4fb1",
+        measurementId: "G-44MYL4XYKM"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    let cachedUsers = [];
+
+    async function loadDashboard() {
+        try {
+            const uSnap = await getDocs(collection(db, "users"));
+            cachedUsers = uSnap.docs.map(d => ({id: d.id, ...d.data()}));
+            
+            document.getElementById('user-count').innerText = cachedUsers.length;
+            renderStudentList();
+        } catch (e) {
+            console.error("データ取得エラー:", e);
+            alert("Firebaseからのデータ取得に失敗しました。Configやセキュリティルールを確認してください。");
+        }
+    }
+
+    function renderStudentList() {
+        const container = document.getElementById('student-list-container');
+        container.innerHTML = "";
+
+        if (cachedUsers.length === 0) {
+            container.innerHTML = `<li style="padding: 20px; text-align: center; color: var(--slate-400);">生徒データが登録されていません</li>`;
+            return;
+        }
+
+        cachedUsers.forEach(user => {
+            const li = document.createElement('li');
+            li.className = 'student-item';
+            li.dataset.uid = user.id;
+            li.innerHTML = `
+                <span>${user.name}</span>
+                <span class="student-badge">${user.current_print || 'A1'}</span>
+            `;
+            li.addEventListener('click', () => {
+                document.querySelectorAll('.student-item').forEach(item => item.classList.remove('active'));
+                li.classList.add('active');
+                renderPersonalTimeline(user.id);
+            });
+            container.appendChild(li);
+        });
+    }
+
+    function renderPersonalTimeline(uid) {
+        const user = cachedUsers.find(u => u.id === uid);
+        if (!user) return;
+
+        document.getElementById('selected-student-name').innerText = user.name;
+        document.getElementById('selected-student-progress').innerText = user.current_print || 'A1';
+
+        const totalDuration = user.total_duration || 0;
+        document.getElementById('totalDurationVal').innerHTML = `${totalDuration} <span style="font-size: 0.8rem; font-weight: 400; color: var(--slate-800);">分</span>`;
+
+        const dailyStats = user.daily_stats || {};
+        const sortedDates = Object.keys(dailyStats).sort((a, b) => b.localeCompare(a)); // 降順
+
+        const tBody = document.getElementById('timelineBody');
+        tBody.innerHTML = "";
+
+        if (sortedDates.length === 0) {
+            tBody.innerHTML = `<tr><td colspan="5" style="padding: 40px; text-align: center; color: var(--slate-400);">この生徒の学習ログはまだありません。</td></tr>`;
+            return;
+        }
+
+        sortedDates.forEach(dateKey => {
+            const stats = dailyStats[dateKey];
+            const durationMin = stats.duration || 0;
+            const sheetCount = stats.count || 0;
+            
+            // 日付のフォーマット (YYYY-MM-DD -> MM/DD)
+            const displayDate = dateKey.split('-').slice(1).join('/');
+
+            // 通算正答率の計算
+            const dayRate = stats.total_questions ? Math.round((stats.total_correct / stats.total_questions) * 100) : 0;
+
+            // プリント内訳チップス生成
+            let chipsHtml = '<div class="print-chips">';
+            if (stats.prints && Object.keys(stats.prints).length > 0) {
+                for (let printId in stats.prints) {
+                    chipsHtml += `<span class="chip">${printId} (${stats.prints[printId]}%)</span>`;
+                }
+            } else {
+                chipsHtml += '-';
+            }
+            chipsHtml += '</div>';
+
+            tBody.innerHTML += `
+                <tr>
+                    <td class="td-date">${displayDate}</td>
+                    <td class="td-time">${durationMin}<span class="unit-val">分</span></td>
+                    <td class="td-count">${sheetCount}<span class="unit-val">枚</span></td>
+                    <td class="td-rate"><span class="badge badge-success">${dayRate}%</span></td>
+                    <td style="text-align: left; padding-left: 20px;">${chipsHtml}</td>
+                </tr>`;
+        });
+    }
+
+    loadDashboard();
+</script>
+</body>
+</html>
