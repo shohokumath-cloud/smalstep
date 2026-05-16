@@ -16,7 +16,7 @@
 
     <style>
         :root {
-            --primary: #3b82f6; 
+            --primary: #3b82f6; /* モダンなブルー */
             --primary-hover: #2563eb;
             --primary-soft: #eff6ff;
             --success: #10b981;
@@ -249,11 +249,43 @@
             display: flex;
             gap: 12px;
             width: 100%;
-            margin-bottom: 32px;
+            margin-bottom: 20px;
         }
         .study-actions-top .btn {
             flex: 1;
         }
+
+        /* 新設：デジタル数字入力ボタンボード（12列の等間隔レイアウト） */
+        .numeric-keyboard {
+            display: grid;
+            grid-template-columns: repeat(12, 1fr);
+            gap: 6px;
+            margin-bottom: 28px;
+            width: 100%;
+        }
+        .key-btn {
+            background: var(--slate-100);
+            color: var(--slate-800);
+            border: 1px solid var(--slate-200);
+            padding: 14px 0;
+            border-radius: 12px;
+            font-size: 1.3rem;
+            font-weight: 700;
+            cursor: pointer;
+            user-select: none;
+            transition: all 0.1s ease;
+            text-align: center;
+            box-sizing: border-box;
+        }
+        .key-btn:hover { background: var(--slate-200); border-color: var(--slate-300); }
+        .key-btn:active { background: var(--slate-300); transform: scale(0.96); }
+        /* エンターボタンだけ視覚的に分かりやすくチューニング */
+        .key-btn.enter-key {
+            background: var(--primary-soft);
+            color: var(--primary);
+            border-color: var(--primary);
+        }
+        .key-btn.enter-key:hover { background: var(--primary); color: white; }
 
         .question-list { 
             display: grid; 
@@ -267,6 +299,9 @@
             .question-list {
                 grid-template-columns: 1fr; 
                 gap: 16px;
+            }
+            .numeric-keyboard {
+                grid-template-columns: repeat(6, 1fr); /* スマホ時は押しやすいように2段に自動シフト */
             }
         }
 
@@ -301,7 +336,6 @@
             gap: 6px;
         }
 
-        /* 答えの入力枠周りのレイアウト */
         .answer-wrapper-side {
             display: flex;
             align-items: center;
@@ -500,6 +534,21 @@
             <button class="btn" id="btn-next-print" style="display: none;">次のプリントへ</button>
             <button class="btn btn-secondary" id="btn-end-study">学習を終了する</button>
         </div>
+
+        <div class="numeric-keyboard">
+            <div class="key-btn" data-val="1">1</div>
+            <div class="key-btn" data-val="2">2</div>
+            <div class="key-btn" data-val="3">3</div>
+            <div class="key-btn" data-val="4">4</div>
+            <div class="key-btn" data-val="5">5</div>
+            <div class="key-btn" data-val="6">6</div>
+            <div class="key-btn" data-val="7">7</div>
+            <div class="key-btn" data-val="8">8</div>
+            <div class="key-btn" data-val="9">9</div>
+            <div class="key-btn" data-val="0">0</div>
+            <div class="key-btn" data-val="-">-</div>
+            <div class="key-btn enter-key" data-val="enter">↵</div>
+        </div>
         
         <div class="question-list" id="question-list-container">
             </div>
@@ -553,6 +602,7 @@
     let studyStartTime = null; 
     let currentQuestions = []; 
     let currentPrintName = "A1";
+    let activeInput = null; // 現在選択されて点滅している入力箱を追跡するポインタ変数
     
     let sessionCount = 0;
     let sessionCorrectQuestions = 0;
@@ -660,9 +710,42 @@
         loadPrintQuestions();
     }
 
+    // デジタル数字キーボードのタップ・クリック処理（mousedown制御でフォーカスを死守）
+    document.querySelectorAll('.key-btn').forEach(btn => {
+        btn.addEventListener('mousedown', (e) => {
+            e.preventDefault(); // 超重要：インプットボックスからカーソルが奪われるのを完全ガード
+            
+            if (!activeInput) return; // 選択されている箱がなければ何もしない
+            
+            const val = btn.dataset.val;
+            if (val === 'enter') {
+                triggerNextFocus(activeInput);
+            } else {
+                // 文字列として末尾に追記し、入力イベントをトリガー
+                activeInput.value += val;
+                activeInput.dispatchEvent(new Event('input'));
+            }
+        });
+    });
+
+    // Enterが押された時に「次の箱」にカーソルをスキップ移動させる関数
+    function triggerNextFocus(currentInput) {
+        const allInputs = Array.from(document.querySelectorAll('.answer-box'));
+        const currentIndex = allInputs.indexOf(currentInput);
+        
+        if (currentIndex < allInputs.length - 1) {
+            allInputs[currentIndex + 1].focus();
+            allInputs[currentIndex + 1].select(); // 打ち直しがしやすいよう自動的に全選択
+        } else {
+            // すべての箱が埋まった最後のEnterなら、答え合わせボタンに誘導
+            document.getElementById('btn-check-answers').focus();
+        }
+    }
+
     async function loadPrintQuestions() {
         document.getElementById('study-print-name').innerText = currentPrintName;
         document.getElementById('score100Area').innerHTML = ''; 
+        activeInput = null;
         
         const container = document.getElementById('question-list-container');
         container.innerHTML = "<div style='grid-column: span 2; text-align:center; padding:20px; color:var(--slate-400);'>問題を読み込み中...</div>";
@@ -698,12 +781,10 @@
                 let inputHtml = '';
                 let correctAnswers = [];
 
-                // ユーザーが書いたデータ（data-ans / data-ans-num）を取得
                 const ansNum = el.getAttribute('data-ans-num');
                 const ansDen = el.getAttribute('data-ans-den');
                 const ansSingle = el.getAttribute('data-ans');
 
-                // 取得したデータに基づいて入力箱のHTMLを組み立てる（data-ans属性に答えを確実に格納）
                 if (ansNum !== null && ansDen !== null) {
                     inputHtml = `
                         <div class="fraction-container">
@@ -722,18 +803,13 @@
                     correctAnswers = [parseFloat(ansSingle)];
                 }
 
-                // 問題テキストの自動TeX化ロジック
                 if (!rawText.includes('\\(') && !rawText.includes('$')) {
-                    // 問題番号 (1) などを抽出
                     let numMatch = rawText.match(/^(\(\d+\))\s*/);
                     let qNumStr = numMatch ? numMatch[1] : `(${idx + 1})`;
                     let qBody = numMatch ? rawText.substring(numMatch[0].length) : rawText;
                     
-                    // ブラウザが変換した「÷」「×」をTeXの命令に置換
                     qBody = qBody.replace(/÷/g, '\\div');
                     qBody = qBody.replace(/×/g, '\\times');
-                    
-                    // 分数（数字/数字）をTeXの \frac に置換
                     qBody = qBody.replace(/(\d+)\/(\d+)/g, '\\frac{$1}{$2}');
                     
                     rawText = `<span style="font-weight:bold; color:var(--slate-700); margin-right:6px;">${qNumStr}</span> \\(${qBody}\\)`;
@@ -748,7 +824,6 @@
                 `;
                 container.appendChild(item);
 
-                // 生成されたインプット要素を確実に取得
                 const cardInputs = item.querySelectorAll('.answer-box');
                 currentQuestions.push({
                     inputs: cardInputs,
@@ -756,19 +831,39 @@
                 });
             });
 
-            // MathJaxへ動的変換の即時リクエストを発火
             if (window.MathJax && window.MathJax.typesetPromise) {
                 window.MathJax.typesetPromise([container]);
             }
+
+            // 新設：動的に生成された全入力箱に、フォーカス監視と物理Enterキー監視イベントをバインド
+            const allAnswerBoxes = container.querySelectorAll('.answer-box');
+            allAnswerBoxes.forEach((input) => {
+                // 箱が選択されたらポインタ変数を更新
+                input.addEventListener('focus', () => {
+                    activeInput = input;
+                });
+
+                // 物理キーボードのEnterが押された際のアクション
+                input.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter') {
+                        e.preventDefault(); // 改行や標準発火をキャンセル
+                        triggerNextFocus(input);
+                    }
+                });
+            });
 
             document.getElementById('btn-check-answers').style.display = 'block';
             document.getElementById('btn-next-print').style.display = 'none';
             document.getElementById('btn-end-study').style.display = 'block'; 
             
+            // UX仕様：1問目の最初の箱に自動的にカーソルを合わせる
             setTimeout(() => {
-                const firstInput = document.querySelector('.answer-box');
-                if(firstInput) firstInput.focus();
-            }, 150);
+                const firstInput = container.querySelector('.answer-box');
+                if(firstInput) {
+                    firstInput.focus();
+                    firstInput.select();
+                }
+            }, 200);
 
         } catch (e) {
             console.error(e);
@@ -779,11 +874,11 @@
     document.getElementById('btn-check-answers').addEventListener('click', async () => {
         let correctCount = 0;
         let results = [];
+        activeInput = null; // 採点時はテンキーを無効化
 
         currentQuestions.forEach((qData) => {
             let isCardAllCorrect = true; 
 
-            // qData.inputs はquerySelectorAllで取得した入力箱のリスト
             qData.inputs.forEach((input, inputIdx) => {
                 const userAns = parseFloat(input.value);
                 const correctAns = qData.answers[inputIdx];
