@@ -16,7 +16,7 @@
 
     <style>
         :root {
-            --primary: #0ea5e9; /* 洗練された水色ベース */
+            --primary: #0ea5e9; /* 動的に書き換わるメインテーマカラー */
             --primary-hover: #2563eb;
             --primary-soft: #f0f9ff;
             --success: #10b981;
@@ -35,7 +35,7 @@
             --slate-700: #334155;
             --slate-800: #1e293b;
             --red-pen: rgba(255, 50, 50, 0.6); 
-            --btn-gradient: linear-gradient(135deg, #22d3ee 0%, #2563eb 100%); 
+            --btn-gradient: linear-gradient(135deg, #22d3ee 0%, #2563eb 100%); /* 動的に書き換わるグラデーション定義 */
         }
 
         body {
@@ -127,7 +127,7 @@
             font-size: 1.05rem;
             font-weight: 600;
             cursor: pointer;
-            transition: all 0.2s ease;
+            transition: background 0.3s, transform 0.2s, box-shadow 0.2s;
             text-align: center;
             box-shadow: 0 4px 14px rgba(14, 165, 233, 0.25);
             width: 100%;
@@ -148,7 +148,7 @@
         .login-header h1 { font-size: 2.2rem; color: var(--slate-800); }
         .login-header p { color: var(--slate-400); margin: 8px 0 0 0; font-size: 0.95rem; }
         .form-group { margin-bottom: 24px; }
-        .form-group label { block; font-size: 0.85rem; font-weight: 600; color: var(--slate-500); margin-bottom: 8px; }
+        .form-group label { display: block; font-size: 0.85rem; font-weight: 600; color: var(--slate-500); margin-bottom: 8px; }
         .form-group input {
             width: 100%;
             padding: 16px;
@@ -284,8 +284,8 @@
         .key-btn:active { background: var(--slate-300); transform: scale(0.96); }
         .key-btn.enter-key {
             background: var(--primary-soft);
-            color: #0284c7;
-            border-color: #0ea5e9;
+            color: var(--primary);
+            border-color: var(--primary);
         }
         .key-btn.enter-key:hover { background: var(--primary); color: white; }
 
@@ -407,7 +407,7 @@
             box-sizing: border-box;
         }
         
-        .answer-box:focus { border-color: #0ea5e9; background: white; box-shadow: 0 0 0 3px var(--primary-soft); }
+        .answer-box:focus { border-color: var(--primary); background: white; box-shadow: 0 0 0 3px var(--primary-soft); }
         .answer-box.is-correct { border-color: var(--success) !important; background-color: #f0fdf4; color: #166534; }
         .answer-box.is-incorrect { border-color: var(--danger) !important; background-color: #fef2f2; color: #991b1b; }
 
@@ -452,7 +452,7 @@
 
         table.history-table { 
             width: 100%; 
-            min-width: 900px; 
+            min-width: 950px; 
             border-collapse: collapse; 
         }
         .history-table th { 
@@ -478,7 +478,10 @@
         
         .td-date { width: 90px; font-weight: 600 !important; color: var(--slate-800) !important; }
         .td-time { width: 90px; }
-        .td-count { width: 90px; border-right: 1px solid var(--slate-200) !important; color: #0284c7 !important; font-weight: 600 !important; }
+        .td-count { width: 90px; color: #475569 !important; font-weight: 600 !important; }
+        
+        /* 新設：新設した通算正答率カラム用のスタイル指定 */
+        .td-rate { width: 90px; border-right: 1px solid var(--slate-200) !important; color: var(--primary) !important; font-weight: 700 !important; }
         
         .td-progress-graph { padding: 0 !important; width: auto; position: relative; }
         .graph-wrapper { display: flex; height: 100%; width: 100%; min-height: 52px; }
@@ -600,8 +603,8 @@
                 <svg width="260" height="260" viewBox="0 0 260 260">
                     <defs>
                         <linearGradient id="cyan-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                            <stop offset="0%" stop-color="#22d3ee" />
-                            <stop offset="100%" stop-color="#2563eb" />
+                            <stop id="grad-stop-1" offset="0%" stop-color="#22d3ee" />
+                            <stop id="grad-stop-2" offset="100%" stop-color="#2563eb" />
                         </linearGradient>
                     </defs>
                     <circle cx="130" cy="130" r="110" stroke="#f1f5f9" stroke-width="16" fill="none" />
@@ -666,6 +669,7 @@
                         <th class="td-date">日付</th>
                         <th class="td-time">学習時間</th>
                         <th class="td-count">枚数</th>
+                        <th class="td-rate">正答率</th>
                         <th colspan="10" style="text-align: left; padding-left: 20px;">プリントの進みぐあい（1マス＝5問）</th>
                     </tr>
                 </thead>
@@ -742,13 +746,52 @@
 
     const sleep = ms => new Promise(res => setTimeout(res, ms));
 
-    // 画面切り替えメソッドの最適化（ホーム画面起動時に毎回アニメーションをフック）
+    // 新設：シリーズ文字（A〜G）を自動判別し、色彩をリアルタイムにリペイントするテーマエンジン
+    function applySeriesTheme(printName) {
+        if (!printName) return;
+        const letter = printName.charAt(0).toUpperCase();
+        const root = document.documentElement;
+        
+        let primary = "#0ea5e9";
+        let gradStart = "#22d3ee";
+        let gradEnd = "#2563eb";
+        
+        switch(letter) {
+            case 'A': // 水色〜青
+                primary = "#0ea5e9"; gradStart = "#22d3ee"; gradEnd = "#2563eb"; break;
+            case 'B': // 黄緑〜深緑
+                primary = "#16a34a"; gradStart = "#a3e635"; gradEnd = "#15803d"; break;
+            case 'C': // オレンジ〜赤
+                primary = "#ea580c"; gradStart = "#f97316"; gradEnd = "#dc2626"; break;
+            case 'D': // パープル〜インディゴ
+                primary = "#9333ea"; gradStart = "#c084fc"; gradEnd = "#4f46e5"; break;
+            case 'E': // ピンク〜ルビー
+                primary = "#db2777"; gradStart = "#f472b6"; gradEnd = "#be185d"; break;
+            case 'F': // ゴールド〜アンバー
+                primary = "#d97706"; gradStart = "#fbbf24"; gradEnd = "#b45309"; break;
+            case 'G': // モノトーン・チャコール
+                primary = "#475569"; gradStart = "#94a3b8"; gradEnd = "#1e293b"; break;
+        }
+        
+        root.style.setProperty('--primary', primary);
+        root.style.setProperty('--btn-gradient', `linear-gradient(135deg, ${gradStart} 0%, ${gradEnd} 100%)`);
+        
+        // SVGグラデーションストップの動的書き換え
+        const stop1 = document.getElementById('grad-stop-1');
+        const stop2 = document.getElementById('grad-stop-2');
+        if (stop1 && stop2) {
+            stop1.setAttribute('stop-color', gradStart);
+            stop2.setAttribute('stop-color', gradEnd);
+        }
+    }
+
     function showScreen(screenId) {
         document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
         document.getElementById(screenId).classList.add('active');
         
         if (screenId === 'screen-home') {
-            updateHomeGauge(); // ゲージアニメーションを発火
+            applySeriesTheme(currentPrintName); // ホーム読み込み時にテーマをリフレッシュ
+            updateHomeGauge(); 
         }
     }
 
@@ -797,21 +840,18 @@
         showScreen('screen-login');
     });
 
-    // 仕様変更点：ホーム画面を開くたびに、0から目標の％までぐーんと伸びるアニメーションの実装
     function updateHomeGauge() {
         document.getElementById('txt-current-print').innerText = currentPrintName;
         
         const ring = document.getElementById('gauge-ring');
         if (ring) {
-            const circumference = 2 * Math.PI * 110; // 約691.15
+            const circumference = 2 * Math.PI * 110; 
             
-            // 1. まず一瞬で0%（満タンにオフセットされた状態）に戻して、トランジションをリセット
             ring.style.transition = 'none';
             ring.style.strokeDashoffset = circumference;
             
-            // 2. 微小なディレイのあと、アニメーション付きで目標進捗％まで伸ばす
             setTimeout(() => {
-                ring.style.transition = 'stroke-dashoffset 1.4s cubic-bezier(0.25, 1, 0.5, 1)'; // 心地よい滑らかな加速
+                ring.style.transition = 'stroke-dashoffset 1.4s cubic-bezier(0.25, 1, 0.5, 1)'; 
                 const numPart = parseInt(currentPrintName.match(/\d+/)[0]);
                 const percent = Math.min(100, Math.round((numPart / 50) * 100));
                 const offset = circumference - (percent / 100) * circumference;
@@ -895,7 +935,7 @@
         return rates;
     }
 
-    // 仕様変更点：拡張したA〜Gシリーズすべてのグリッドを全自動レンダリング
+    // 仕様変更点：未トライ文字を表示させずクリーン化（形だけをキープ）
     function renderReviewMenu() {
         const rates = getLatestPrintRates();
         
@@ -907,7 +947,9 @@
                 const printId = `${prefix}${i}`;
                 const hasRate = rates[printId] !== undefined;
                 const rate = rates[printId];
-                const rateInfo = hasRate ? `${rate}%` : "未トライ";
+                
+                // 修正：未トライの場合は空文字にする
+                const rateInfo = hasRate ? `${rate}%` : "";
                 
                 const cell = document.createElement('div');
                 cell.className = 'review-item-btn';
@@ -924,9 +966,10 @@
                     cell.classList.add('low');     
                 }
 
+                // 修正：未トライ時は枠を visibility: hidden で隠して余白バランスを完全保持
                 cell.innerHTML = `
                     <div class="review-item-name">${printId}</div>
-                    <div class="review-item-rate">${rateInfo}</div>
+                    <div class="review-item-rate" style="${hasRate ? '' : 'visibility: hidden;'}">${rateInfo}</div>
                 `;
                 
                 cell.addEventListener('click', () => {
@@ -962,6 +1005,10 @@
     }
 
     async function loadPrintQuestions() {
+        // 修正点：タイトル書き換えとテーマ更新の同期処理を完全強化
+        document.getElementById('study-print-name').innerText = currentPrintName;
+        applySeriesTheme(currentPrintName);
+        
         document.getElementById('score100Area').innerHTML = ''; 
         activeInput = null;
         
@@ -1091,6 +1138,9 @@
             document.getElementById('btn-next-print').addEventListener('click', handleNextPrint);
             document.getElementById('btn-back-to-review').addEventListener('click', handleBackToReview);
 
+            // ヘッダータイトルの再確認強制インジェクション
+            document.getElementById('study-print-name').innerText = currentPrintName;
+
             if (window.MathJax && window.MathJax.typesetPromise) {
                 window.MathJax.typesetPromise([container]);
             }
@@ -1210,7 +1260,6 @@
         }
     }
 
-    // 仕様変更点：データ損失防止のため「次へ」ボタンを押した瞬間にFirebaseへ進捗を即時自動セーブ
     function handleNextPrint() {
         const match = currentPrintName.match(/([A-Z]+)(\d+)/);
         let alpha = match[1];
@@ -1224,7 +1273,6 @@
 
         currentPrintName = `${alpha}${num}`;
         
-        // 通常学習モード時、進んだ瞬間に進捗キーを完全に同期コミット
         if (!isReviewMode && currentUser) {
             currentUser.current_print = currentPrintName;
             const userRef = doc(db, "users", userId);
@@ -1316,23 +1364,25 @@
         showScreen('screen-home');
     });
 
-    // 仕様変更点：日付を昇順（過去➔最新）で下に積み上げ表示し、末尾へ自動自動スクロールするパーサー
+    // 仕様変更点：日次の通算正答率を逆算して新カラムにインジェクション
     function renderRecords() {
         const listContainer = document.getElementById('timeline-list');
         listContainer.innerHTML = "";
 
         if (!currentUser.daily_stats || Object.keys(currentUser.daily_stats).length === 0) {
-            listContainer.innerHTML = `<tr><td colspan="13" style="padding:40px; color:var(--slate-400);">まだ記録がありません</td></tr>`;
+            listContainer.innerHTML = `<tr><td colspan="14" style="padding:40px; color:var(--slate-400);">まだ記録がありません</td></tr>`;
             return;
         }
 
-        // 昇順（a.localeCompare(b)）に並び替えて、古いものから新しいものが下にいくように配置
         const sortedDates = Object.keys(currentUser.daily_stats).sort((a,b) => a.localeCompare(b));
         
         sortedDates.forEach(date => {
             const stats = currentUser.daily_stats[date];
             const displayDate = date.split('-').slice(1).join('/'); 
             
+            // その日に取り組んだ全問の総正答率をFirebaseデータから正確に100分率化
+            const dailyRate = stats.total_questions ? Math.round((stats.total_correct / stats.total_questions) * 100) : 0;
+
             let minQ = 0;
             let maxQ = 0;
             if(stats.print_numbers && stats.print_numbers.length > 0) {
@@ -1378,12 +1428,12 @@
                 <td class="td-date">${displayDate}</td>
                 <td class="td-time">${stats.duration || 0}<span class="unit-val">分</span></td>
                 <td class="td-count">${stats.count || 0}<span class="unit-val">枚</span></td>
+                <td class="td-rate">${dailyRate}%</td>
                 ${graphHtml}
             `;
             listContainer.appendChild(tr);
         });
 
-        // 描画が完了した直後、最新データがある最下部へ自動で滑らかにスクロール追従させる
         const scrollContainer = document.querySelector('#screen-records .table-responsive');
         if (scrollContainer) {
             setTimeout(() => {
