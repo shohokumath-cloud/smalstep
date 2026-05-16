@@ -35,7 +35,7 @@
             --slate-700: #334155;
             --slate-800: #1e293b;
             --red-pen: rgba(255, 50, 50, 0.6); 
-            --btn-gradient: linear-gradient(135deg, #22d3ee 0%, #2563eb 100%); /* ゲージと同一の水色グラデーション */
+            --btn-gradient: linear-gradient(135deg, #22d3ee 0%, #2563eb 100%); 
         }
 
         body {
@@ -44,18 +44,18 @@
             color: var(--slate-800);
             margin: 0;
             padding: 0;
-            height: 100vh; /* 画面に追従 */
+            height: 100vh; 
             display: flex;
             justify-content: center;
             align-items: center;
-            overflow: hidden; /* 仕様変更：全体の無駄なスクロールを完全排除 */
+            overflow: hidden; 
         }
 
         .app-container {
             width: 100%;
             max-width: 1200px; 
             background: var(--card);
-            height: 100vh; /* 画面いっぱいに縦幅を固定 */
+            height: 100vh; 
             display: flex;
             flex-direction: column;
             position: relative;
@@ -81,21 +81,20 @@
             width: 100%;
             box-sizing: border-box;
             height: 100%;
-            overflow: hidden; /* 基本は画面固定 */
+            overflow: hidden; 
         }
 
         .screen.active {
             display: flex;
         }
 
-        #screen-login, #screen-home, #screen-study {
+        #screen-login, #screen-home {
             max-width: 550px;
             margin-left: auto;
             margin-right: auto;
         }
 
-        /* 記録画面と復習メニューだけは内部コンテンツを滑らかにスクロールさせる */
-        #screen-records, #screen-review {
+        #screen-study, #screen-records, #screen-review {
             max-width: 100%;
         }
         #screen-records .table-responsive, 
@@ -105,16 +104,17 @@
             -webkit-overflow-scrolling: touch;
         }
 
+        #screen-home {
+            padding-top: 2cm;
+        }
+
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(8px); }
             to { opacity: 1; transform: translateY(0); }
         }
 
-        /* 共通コンポーネント */
-        h1, h2, h3 { margin: 0; font-weight: 700; letter-spacing: -0.02em; }
-        
         .btn {
-            background: var(--btn-gradient); /* 仕様変更：水色〜青のグラデーションに変更 */
+            background: var(--btn-gradient); 
             color: white;
             border: none;
             padding: 16px 28px;
@@ -197,8 +197,6 @@
             justify-content: center;
             margin-bottom: 40px;
         }
-        
-        /* 新設計：SVG端丸グラデーションリングプログレスバー */
         .circle-gauge {
             width: 260px;
             height: 260px;
@@ -221,7 +219,6 @@
             align-items: center;
             justify-content: center;
         }
-        /* 仕様変更：現在のプリントラベル、枚数カウントは廃止し、問題番号のみをダイナミックに配置 */
         .print-number { font-size: 5rem; font-weight: 700; color: var(--slate-800); line-height: 1; letter-spacing: -0.02em; }
 
         /* 3. 今日の学習画面 */
@@ -292,19 +289,8 @@
             gap: 24px; 
             width: 100%; 
             box-sizing: border-box;
-        }
-        
-        @media (max-width: 767px) {
-            .numeric-keyboard {
-                display: none !important; 
-            }
-        }
-        
-        @media (max-width: 500px) {
-            .question-list {
-                grid-template-columns: 1fr; 
-                gap: 16px;
-            }
+            overflow-y: auto; 
+            padding-bottom: 20px;
         }
 
         .question-item {
@@ -319,7 +305,29 @@
             box-sizing: border-box;
             position: relative; 
         }
+
+        .question-item.example-item {
+            grid-column: span 2; 
+            background: var(--slate-100);
+            border-color: var(--slate-300);
+            box-shadow: none;
+        }
+        .question-item.example-item .answer-box {
+            background: var(--slate-200) !important;
+            color: var(--slate-500) !important;
+            border-color: var(--slate-300) !important;
+            cursor: not-allowed;
+        }
         
+        @media (max-width: 767px) {
+            .numeric-keyboard { display: none !important; }
+        }
+        
+        @media (max-width: 500px) {
+            .question-list { grid-template-columns: 1fr; gap: 16px; }
+            .question-item.example-item { grid-column: span 1; }
+        }
+
         .question-content-area {
             display: flex;
             align-items: center;
@@ -368,7 +376,7 @@
             text-align: center;
             font-weight: 600;
             outline: none;
-            color: #0284c7;
+            color: var(--primary);
             transition: all 0.2s;
             box-sizing: border-box;
         }
@@ -406,9 +414,6 @@
         }
 
         /* 4. これまでの記録画面 */
-        .record-header { margin-bottom: 32px; text-align: center; }
-        .record-header h2 { font-size: 1.5rem; color: var(--slate-800); }
-        
         .table-responsive {
             width: 100%;
             border-radius: 16px;
@@ -464,7 +469,7 @@
         .progress-bar-fill {
             position: absolute;
             top: 8px; bottom: 8px;
-            background: var(--btn-gradient); /* 記録の進捗グラフバーも水色グラデーションに統一 */
+            background: var(--btn-gradient); 
             border-radius: 4px;
             display: flex; align-items: center; justify-content: center;
             color: white; font-size: 0.75rem; font-weight: 600;
@@ -473,17 +478,6 @@
         }
 
         .unit-val { font-size: 0.75rem; color: var(--slate-400); font-weight: 400; margin-left: 2px; }
-
-        /* ホームに戻るコンテナの最前面化設定（z-index競合バグを完全駆逐） */
-        .back-home-container { 
-            margin-top: 20px; 
-            width: 100%; 
-            max-width: 300px; 
-            margin-left: auto; 
-            margin-right: auto; 
-            position: relative; 
-            z-index: 9999; /* 重なり順位を最高位に引き上げクリックを100%可能に */
-        }
 
         /* 5. 復習メニュー画面用スタイル */
         .review-container h3 {
@@ -517,7 +511,7 @@
         }
 
         .review-item-btn.disabled {
-            background: #e2e8f0 !important; /* 未トライ：グレーダウン */
+            background: #e2e8f0 !important; 
             border-color: #cbd5e1 !important;
             cursor: not-allowed !important;
             pointer-events: none !important; 
@@ -525,10 +519,10 @@
         }
         .review-item-btn.disabled .review-item-name { color: #94a3b8 !important; }
         
-        .review-item-btn.perfect { background: #d1fae5 !important; border-color: #10b981 !important; } /* 100%: 薄緑 */
-        .review-item-btn.high { background: #eff6ff !important; border-color: #3b82f6 !important; }    /* 80%以上: 薄青 */
-        .review-item-btn.mid { background: #fffbeb !important; border-color: #f59e0b !important; }     /* 50%以上: 薄黄 */
-        .review-item-btn.low { background: #fef2f2 !important; border-color: #ef4444 !important; }     /* 50%未満: 薄赤 */
+        .review-item-btn.perfect { background: #d1fae5 !important; border-color: #10b981 !important; } 
+        .review-item-btn.high { background: #eff6ff !important; border-color: #3b82f6 !important; }    
+        .review-item-btn.mid { background: #fffbeb !important; border-color: #f59e0b !important; }     
+        .review-item-btn.low { background: #fef2f2 !important; border-color: #ef4444 !important; }     
 
         .review-item-btn:not(.disabled):hover {
             transform: translateY(-2px);
@@ -638,8 +632,9 @@
     </div>
 
     <div id="screen-records" class="screen">
-        <div class="record-header">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
             <h2>学習のきろく</h2>
+            <button class="btn btn-secondary" id="btn-record-back" style="width:auto; padding:10px 24px; border-radius:12px;">ホームに戻る</button>
         </div>
         
         <div class="table-responsive">
@@ -655,10 +650,6 @@
                 <tbody id="timeline-list">
                 </tbody>
             </table>
-        </div>
-
-        <div class="back-home-container">
-            <button class="btn btn-secondary" id="btn-record-back">ホームにもどる</button>
         </div>
     </div>
 
@@ -765,14 +756,12 @@
         showScreen('screen-login');
     });
 
-    // 修正点：新設計のSVGプログレスバー用にオフセットアニメーションを再実装
     function updateHomeGauge() {
         document.getElementById('txt-current-print').innerText = currentPrintName;
         const numPart = parseInt(currentPrintName.match(/\d+/)[0]);
         const percent = Math.min(100, Math.round((numPart / 50) * 100));
         
-        // SVGの周長を割り出して、strokeDashoffsetを数式制御
-        const circumference = 2 * Math.PI * 110; // 半径110 = 約691.15
+        const circumference = 2 * Math.PI * 110; 
         const offset = circumference - (percent / 100) * circumference;
         
         const ring = document.getElementById('gauge-ring');
@@ -805,7 +794,7 @@
     });
 
     function triggerNextFocus(currentInput) {
-        const allInputs = Array.from(document.querySelectorAll('.answer-box'));
+        const allInputs = Array.from(document.querySelectorAll('.answer-box:not([disabled])'));
         const currentIndex = allInputs.indexOf(currentInput);
         
         if (currentIndex < allInputs.length - 1) {
@@ -950,6 +939,11 @@
                 const item = document.createElement('div');
                 item.className = 'question-item';
                 
+                const isExample = el.getAttribute('data-is-example') === 'true';
+                if (isExample) {
+                    item.classList.add('example-item'); 
+                }
+                
                 let rawText = el.innerHTML;
                 let inputHtml = '';
                 let correctAnswers = [];
@@ -961,24 +955,24 @@
                 if (ansNum !== null && ansDen !== null) {
                     inputHtml = `
                         <div class="fraction-container">
-                            <input type="text" class="answer-box num-input" data-ans="${ansNum}">
+                            <input type="text" class="answer-box num-input" data-ans="${ansNum}" ${isExample ? `value="${ansNum}" disabled` : ''}>
                             <div class="frac-line"></div>
-                            <input type="text" class="answer-box den-input" data-ans="${ansDen}">
+                            <input type="text" class="answer-box den-input" data-ans="${ansDen}" ${isExample ? `value="${ansDen}" disabled` : ''}>
                         </div>
                     `;
                     correctAnswers = [parseFloat(ansNum), parseFloat(ansDen)];
                 } else if (ansSingle !== null) {
                     inputHtml = `
                         <div style="margin-left:10px;">
-                            <input type="text" class="answer-box single-input" data-ans="${ansSingle}">
+                            <input type="text" class="answer-box single-input" data-ans="${ansSingle}" ${isExample ? `value="${ansSingle}" disabled` : ''}>
                         </div>
                     `;
                     correctAnswers = [parseFloat(ansSingle)];
                 }
 
                 if (!rawText.includes('\\(') && !rawText.includes('$')) {
-                    let numMatch = rawText.match(/^(\(\d+\))\s*/);
-                    let qNumStr = numMatch ? numMatch[1] : `(${idx + 1})`;
+                    let numMatch = rawText.match(/^(\([^)]+\))\s*/); 
+                    let qNumStr = numMatch ? numMatch[1] : (isExample ? '(例)' : `(${idx + 1})`);
                     let qBody = numMatch ? rawText.substring(numMatch[0].length) : rawText;
                     
                     qBody = qBody.replace(/÷/g, '\\div');
@@ -997,19 +991,22 @@
                 `;
                 container.appendChild(item);
 
-                const cardInputs = item.querySelectorAll('.answer-box');
-                currentQuestions.push({
-                    inputs: cardInputs,
-                    answers: correctAnswers
-                });
+                if (!isExample) {
+                    const cardInputs = item.querySelectorAll('.answer-box');
+                    currentQuestions.push({
+                        cardIdx: idx, 
+                        inputs: cardInputs,
+                        answers: correctAnswers
+                    });
+                }
             });
 
             if (window.MathJax && window.MathJax.typesetPromise) {
                 window.MathJax.typesetPromise([container]);
             }
 
-            const allAnswerBoxes = container.querySelectorAll('.answer-box');
-            allAnswerBoxes.forEach((input) => {
+            const allActiveBoxes = container.querySelectorAll('.answer-box:not([disabled])');
+            allActiveBoxes.forEach((input) => {
                 input.setAttribute('inputmode', 'numeric');
                 input.setAttribute('pattern', '[0-9.-]*'); 
 
@@ -1031,12 +1028,12 @@
             document.getElementById('btn-end-study').style.display = 'block'; 
             
             setTimeout(() => {
-                const firstInput = container.querySelector('.answer-box');
+                const firstInput = container.querySelector('.answer-box:not([disabled])');
                 if(firstInput) {
                     firstInput.focus();
                     firstInput.select();
                 }
-            }, 150);
+            }, 200);
 
         } catch (e) {
             console.error(e);
@@ -1075,7 +1072,8 @@
 
         for (let i = 0; i < currentQuestions.length; i++) {
             if (results[i]) {
-                const circleArea = document.getElementById(`circle-container-${i}`);
+                const origIdx = currentQuestions[i].cardIdx;
+                const circleArea = document.getElementById(`circle-container-${origIdx}`);
                 if (circleArea) {
                     circleArea.innerHTML = circleSvg;
                 }
@@ -1181,10 +1179,9 @@
         showScreen('screen-review');
     });
 
-    // 仕様変更点：「学習を終了する」ボタンクリック時の確認アラート制御を追加
     document.getElementById('btn-end-study').addEventListener('click', async () => {
         if (!confirm("学習を終了してホームに戻りますか？\n（ここまでの学習データは完全に保存されます）")) {
-            return; // キャンセル時は処理を中断
+            return; 
         }
 
         const elapsedMin = Math.max(1, Math.round((Date.now() - studyStartTime) / 1000 / 60));
