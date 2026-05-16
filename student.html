@@ -255,7 +255,7 @@
             flex: 1;
         }
 
-        /* 新設：デジタル数字入力ボタンボード（12列の等間隔レイアウト） */
+        /* 数字入力ボタンボード（12列等間隔） */
         .numeric-keyboard {
             display: grid;
             grid-template-columns: repeat(12, 1fr);
@@ -279,7 +279,6 @@
         }
         .key-btn:hover { background: var(--slate-200); border-color: var(--slate-300); }
         .key-btn:active { background: var(--slate-300); transform: scale(0.96); }
-        /* エンターボタンだけ視覚的に分かりやすくチューニング */
         .key-btn.enter-key {
             background: var(--primary-soft);
             color: var(--primary);
@@ -295,13 +294,17 @@
             box-sizing: border-box;
         }
         
+        /* レンポンスブ制御：スマホ・タブレット等の小さな画面でのスタイル定義 */
+        @media (max-width: 767px) {
+            .numeric-keyboard {
+                display: none !important; /* 明らかに画面サイズが小さい時はテンキーを完全非表示 */
+            }
+        }
+        
         @media (max-width: 500px) {
             .question-list {
                 grid-template-columns: 1fr; 
                 gap: 16px;
-            }
-            .numeric-keyboard {
-                grid-template-columns: repeat(6, 1fr); /* スマホ時は押しやすいように2段に自動シフト */
             }
         }
 
@@ -356,6 +359,7 @@
             border-radius: 1px;
         }
 
+        /* マイナス入力に対応するためtype="text"に最適化 */
         .answer-box {
             width: 60px; 
             padding: 10px 4px;
@@ -369,10 +373,7 @@
             color: var(--primary);
             transition: all 0.2s;
             box-sizing: border-box;
-            -moz-appearance: textfield;
         }
-        .answer-box::-webkit-outer-spin-button,
-        .answer-box::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
         
         .answer-box:focus { border-color: var(--primary); background: white; box-shadow: 0 0 0 3px var(--primary-soft); }
         .answer-box.is-correct { border-color: var(--success) !important; background-color: #f0fdf4; color: #166534; }
@@ -602,7 +603,7 @@
     let studyStartTime = null; 
     let currentQuestions = []; 
     let currentPrintName = "A1";
-    let activeInput = null; // 現在選択されて点滅している入力箱を追跡するポインタ変数
+    let activeInput = null; // 現在点滅しているインプット要素のポインタ
     
     let sessionCount = 0;
     let sessionCorrectQuestions = 0;
@@ -710,34 +711,32 @@
         loadPrintQuestions();
     }
 
-    // デジタル数字キーボードのタップ・クリック処理（mousedown制御でフォーカスを死守）
+    // ソフトウェアテンキーのタップ制御ロジック
     document.querySelectorAll('.key-btn').forEach(btn => {
         btn.addEventListener('mousedown', (e) => {
-            e.preventDefault(); // 超重要：インプットボックスからカーソルが奪われるのを完全ガード
+            e.preventDefault(); // カーソルが外れるブラウザ挙動を完全遮断
             
-            if (!activeInput) return; // 選択されている箱がなければ何もしない
+            if (!activeInput) return; 
             
             const val = btn.dataset.val;
             if (val === 'enter') {
                 triggerNextFocus(activeInput);
             } else {
-                // 文字列として末尾に追記し、入力イベントをトリガー
+                // 文字列結合が100%確実に通るようtype="text"に対して追加
                 activeInput.value += val;
                 activeInput.dispatchEvent(new Event('input'));
             }
         });
     });
 
-    // Enterが押された時に「次の箱」にカーソルをスキップ移動させる関数
     function triggerNextFocus(currentInput) {
         const allInputs = Array.from(document.querySelectorAll('.answer-box'));
         const currentIndex = allInputs.indexOf(currentInput);
         
         if (currentIndex < allInputs.length - 1) {
             allInputs[currentIndex + 1].focus();
-            allInputs[currentIndex + 1].select(); // 打ち直しがしやすいよう自動的に全選択
+            allInputs[currentIndex + 1].select(); 
         } else {
-            // すべての箱が埋まった最後のEnterなら、答え合わせボタンに誘導
             document.getElementById('btn-check-answers').focus();
         }
     }
@@ -785,19 +784,20 @@
                 const ansDen = el.getAttribute('data-ans-den');
                 const ansSingle = el.getAttribute('data-ans');
 
+                // マイナス入力不具合を根絶するため、すべてtype="text"、inputmode="numeric"で自動生成
                 if (ansNum !== null && ansDen !== null) {
                     inputHtml = `
                         <div class="fraction-container">
-                            <input type="number" class="answer-box num-input" data-ans="${ansNum}">
+                            <input type="text" class="answer-box num-input" data-ans="${ansNum}">
                             <div class="frac-line"></div>
-                            <input type="number" class="answer-box den-input" data-ans="${ansDen}">
+                            <input type="text" class="answer-box den-input" data-ans="${ansDen}">
                         </div>
                     `;
                     correctAnswers = [parseFloat(ansNum), parseFloat(ansDen)];
                 } else if (ansSingle !== null) {
                     inputHtml = `
                         <div style="margin-left:10px;">
-                            <input type="number" class="answer-box single-input" data-ans="${ansSingle}">
+                            <input type="text" class="answer-box single-input" data-ans="${ansSingle}">
                         </div>
                     `;
                     correctAnswers = [parseFloat(ansSingle)];
@@ -835,18 +835,19 @@
                 window.MathJax.typesetPromise([container]);
             }
 
-            // 新設：動的に生成された全入力箱に、フォーカス監視と物理Enterキー監視イベントをバインド
+            // 生成された入力箱群に対してキーボードフック・属性の注入を一括実行
             const allAnswerBoxes = container.querySelectorAll('.answer-box');
             allAnswerBoxes.forEach((input) => {
-                // 箱が選択されたらポインタ変数を更新
+                input.setAttribute('inputmode', 'numeric');
+                input.setAttribute('pattern', '[0-9.-]*'); // スマートフォン用テンキー起動指定
+
                 input.addEventListener('focus', () => {
                     activeInput = input;
                 });
 
-                // 物理キーボードのEnterが押された際のアクション
                 input.addEventListener('keydown', (e) => {
                     if (e.key === 'Enter') {
-                        e.preventDefault(); // 改行や標準発火をキャンセル
+                        e.preventDefault(); 
                         triggerNextFocus(input);
                     }
                 });
@@ -856,14 +857,14 @@
             document.getElementById('btn-next-print').style.display = 'none';
             document.getElementById('btn-end-study').style.display = 'block'; 
             
-            // UX仕様：1問目の最初の箱に自動的にカーソルを合わせる
+            // 初回ロード完了時：仕様通り1問目の箱にジャストフォーカス
             setTimeout(() => {
                 const firstInput = container.querySelector('.answer-box');
                 if(firstInput) {
                     firstInput.focus();
                     firstInput.select();
                 }
-            }, 200);
+            }, 150);
 
         } catch (e) {
             console.error(e);
@@ -874,7 +875,7 @@
     document.getElementById('btn-check-answers').addEventListener('click', async () => {
         let correctCount = 0;
         let results = [];
-        activeInput = null; // 採点時はテンキーを無効化
+        activeInput = null; 
 
         currentQuestions.forEach((qData) => {
             let isCardAllCorrect = true; 
