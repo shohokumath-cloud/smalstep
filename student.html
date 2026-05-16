@@ -94,7 +94,6 @@
             margin-right: auto;
         }
 
-        /* 画面全体の配置を中央に整列させる設定 */
         #screen-study {
             max-width: 100%;
             align-items: center;
@@ -228,7 +227,6 @@
         .print-number { font-size: 5rem; font-weight: 700; color: var(--slate-800); line-height: 1; letter-spacing: -0.02em; }
 
         /* 3. 今日の学習画面 */
-        /* 修正点：終了ボタンをコンパクト化して右上に配置するためのフレックスヘッダー */
         .study-header { 
             display: flex; 
             justify-content: space-between; 
@@ -241,7 +239,6 @@
         }
         .study-title { font-size: 1.75rem; color: var(--slate-800); font-weight: 800; }
         
-        /* 修正点：コンパクト化した右上の学習終了ボタン用スタイル */
         .btn-end-compact {
             width: auto !important;
             padding: 10px 20px !important;
@@ -292,10 +289,10 @@
         }
         .key-btn.enter-key:hover { background: var(--primary); color: white; }
 
-        /* 修正点：親コンテナをinline-gridに変更し、問題文の長さに応じて全体の横幅が可変フィットする設定 */
+        /* 可変フィット・完全等幅のカードグリッド */
         .question-list { 
             display: inline-grid; 
-            grid-template-columns: repeat(2, 1fr); /* 2列のマスを常に完全な等幅に統一 */
+            grid-template-columns: repeat(2, 1fr); 
             gap: 20px; 
             box-sizing: border-box;
             overflow-y: auto; 
@@ -314,10 +311,9 @@
             box-shadow: 0 2px 8px rgba(0,0,0,0.02);
             box-sizing: border-box;
             position: relative; 
-            min-width: 380px; /* カードが小さくなりすぎないよう最小幅を担保 */
+            min-width: 380px; 
         }
 
-        /* 例題用のスタイリング（1マスサイズを維持し、背景のみグレー化） */
         .question-item.example-item {
             background: var(--slate-100);
             border-color: var(--slate-300);
@@ -330,7 +326,7 @@
             cursor: not-allowed;
         }
         
-        /* 修正点：(5)番の右隣にピタッと収まるように配置するボタン専用セルのスタイル */
+        /* 操作用アクションボタン専用セルのスタイル */
         .study-actions-cell {
             display: flex;
             align-items: center;
@@ -341,19 +337,14 @@
         }
         .study-actions-cell .btn {
             height: 100%;
-            min-height: 68px; /* カードの高さに美しく揃える */
+            min-height: 68px; 
             border-radius: 16px;
             font-size: 1.2rem;
         }
 
-        /* グリッド内の空白をスキップするためのダミー透明セル */
         .grid-space {
             pointer-events: none;
             visibility: hidden;
-        }
-        
-        @media (max-width: 767px) {
-            .numeric-keyboard { display: none !important; }
         }
         
         @media (max-width: 850px) {
@@ -378,7 +369,7 @@
             display: flex;
             align-items: center;
             gap: 6px;
-            white-space: nowrap; /* テキストの途中の改行を防ぎ、横幅に正しくフィットさせる */
+            white-space: nowrap; 
         }
 
         .answer-wrapper-side {
@@ -833,7 +824,6 @@
             allInputs[currentIndex + 1].focus();
             allInputs[currentIndex + 1].select(); 
         } else {
-            // 全て埋まったら、(5)の右隣に移動した「答え合わせボタン」にフォーカスを誘導
             const activeActionBtn = document.querySelector('.study-actions-cell button:not([style*="display: none"])');
             if(activeActionBtn) activeActionBtn.focus();
         }
@@ -938,7 +928,7 @@
         loadPrintQuestions();
     }
 
-    // 修正点：例題の1マス配置に対応し、(5)番の右隣に確実にボタン群がアライメントされる動的DOMジェネレータ
+    // 仕様変更点：要求された変則配置順（左に例・1・2・3、右に空・4・5・ボタン）をDOMの追加順で完全制御
     async function loadPrintQuestions() {
         document.getElementById('score100Area').innerHTML = ''; 
         activeInput = null;
@@ -969,15 +959,25 @@
             container.innerHTML = "";
             currentQuestions = [];
 
-            qElements.forEach((el, idx) => {
-                const item = document.createElement('div');
-                item.className = 'question-item';
-                
+            let exampleEl = null;
+            let normalEls = [];
+
+            // 1. まずデータファイルを「例題」と「本番問題」に完全に仕分ける
+            qElements.forEach((el) => {
                 const isExample = el.getAttribute('data-is-example') === 'true';
                 if (isExample) {
-                    item.classList.add('example-item'); 
+                    exampleEl = el;
+                } else {
+                    normalEls.push(el);
                 }
-                
+            });
+
+            // カード（DOM）オブジェクトを動的に作成・ビルドする内部共通関数
+            const buildCardNode = (el, customIdx, isExample) => {
+                const item = document.createElement('div');
+                item.className = 'question-item';
+                if (isExample) item.classList.add('example-item');
+
                 let rawText = el.innerHTML;
                 let inputHtml = '';
                 let correctAnswers = [];
@@ -1006,7 +1006,7 @@
 
                 if (!rawText.includes('\\(') && !rawText.includes('$')) {
                     let numMatch = rawText.match(/^(\([^)]+\))\s*/); 
-                    let qNumStr = numMatch ? numMatch[1] : (isExample ? '(例)' : `(${idx + 1})`);
+                    let qNumStr = numMatch ? numMatch[1] : (isExample ? '(例)' : `(${customIdx + 1})`);
                     let qBody = numMatch ? rawText.substring(numMatch[0].length) : rawText;
                     
                     qBody = qBody.replace(/÷/g, '\\div');
@@ -1017,32 +1017,46 @@
                 }
 
                 item.innerHTML = `
-                    <div class="circle-container" id="circle-container-${idx}"></div>
+                    <div class="circle-container" id="circle-container-${isExample ? 'ex' : customIdx}"></div>
                     <div class="question-content-area">
                         <div class="question-text-side">${rawText}</div>
                         <div class="answer-wrapper-side">${inputHtml}</div>
                     </div>
                 `;
-                container.appendChild(item);
-
-                // 修正点：(例)の右側を空欄にして、下段から(1)番を綺麗にスタートさせるための空セル自動インジェクション
-                if (isExample) {
-                    const spaceCell = document.createElement('div');
-                    spaceCell.className = 'grid-space';
-                    container.appendChild(spaceCell);
-                }
 
                 if (!isExample) {
                     const cardInputs = item.querySelectorAll('.answer-box');
                     currentQuestions.push({
-                        cardIdx: idx, 
+                        cardIdx: customIdx,
                         inputs: cardInputs,
                         answers: correctAnswers
                     });
                 }
-            });
+                return item;
+            };
 
-            // 修正点：(5)番カードの直後（右隣）に、各種操作用アクションボタン群を一括で動的生成・合体
+            // 2. 【超重要】指示されたアライメント順（1➔4➔2➔5➔3➔ボタン）に沿ってDOMをコンテナに結合展開する
+            
+            // 1行目：(例) と (空白)
+            if (exampleEl) {
+                container.appendChild(buildCardNode(exampleEl, 0, true));
+                const space1 = document.createElement('div');
+                space1.className = 'grid-space';
+                container.appendChild(space1);
+            }
+
+            // 2行目：(1) と (4)
+            if (normalEls[0]) container.appendChild(buildCardNode(normalEls[0], 0, false));
+            if (normalEls[3]) container.appendChild(buildCardNode(normalEls[3], 3, false));
+
+            // 3行目：(2) と (5)
+            if (normalEls[1]) container.appendChild(buildCardNode(normalEls[1], 1, false));
+            if (normalEls[4]) container.appendChild(buildCardNode(normalEls[4], 4, false));
+
+            // 4行目：(3) と [答え合わせボタン用セル]
+            if (normalEls[2]) container.appendChild(buildCardNode(normalEls[2], 2, false));
+
+            // (5)の右隣（4行目の右側）にアクションボタンをピッタリ設置
             const actionCell = document.createElement('div');
             actionCell.className = 'study-actions-cell';
             actionCell.innerHTML = `
@@ -1052,7 +1066,7 @@
             `;
             container.appendChild(actionCell);
 
-            // 動的ボタンに対するイベントリスナーの紐付けを再構成
+            // リスナー紐付け
             document.getElementById('btn-check-answers').addEventListener('click', handleCheckAnswers);
             document.getElementById('btn-next-print').addEventListener('click', handleNextPrint);
             document.getElementById('btn-back-to-review').addEventListener('click', handleBackToReview);
@@ -1061,6 +1075,7 @@
                 window.MathJax.typesetPromise([container]);
             }
 
+            // 本番用の入力箱のみにイベントを流し込み
             const allActiveBoxes = container.querySelectorAll('.answer-box:not([disabled])');
             allActiveBoxes.forEach((input) => {
                 input.setAttribute('inputmode', 'numeric');
@@ -1078,6 +1093,7 @@
                 });
             });
             
+            // ロード直後：(1)番に自動ジャストフォーカス
             setTimeout(() => {
                 const firstInput = container.querySelector('.answer-box:not([disabled])');
                 if(firstInput) {
@@ -1092,7 +1108,7 @@
         }
     }
 
-    // 答え合わせのコア処理（(5)番の右側セルに完全に組み込まれて動作）
+    // 答え合わせ
     async function handleCheckAnswers() {
         let correctCount = 0;
         let results = [];
@@ -1122,6 +1138,7 @@
             results.push(isCardAllCorrect);
         });
 
+        // 視覚的インデックス(cardIdx)を狙い撃ちして丸を順次描画
         for (let i = 0; i < currentQuestions.length; i++) {
             if (results[i]) {
                 const origIdx = currentQuestions[i].cardIdx;
@@ -1150,7 +1167,6 @@
 
         saveSinglePrintLog(currentPrintName, correctRate);
 
-        // 判定後の同一マス内でのボタン切り替え制御
         document.getElementById('btn-check-answers').style.display = 'none';
 
         if (isReviewMode) {
@@ -1255,7 +1271,7 @@
         todayStats.total_questions = (todayStats.total_questions || 0) + sessionTotalQuestions;
         todayStats.total_correct = (todayStats.total_correct || 0) + sessionCorrectQuestions;
         
-        if(!todayStats.print_numbers)  todayStats.print_numbers = [];
+        if(!todayStats.print_numbers) todayStats.print_numbers = [];
         todayStats.print_numbers = todayStats.print_numbers.concat(sessionPrintNumbers);
 
         if(!todayStats.prints) todayStats.prints = {};
