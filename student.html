@@ -90,7 +90,6 @@
             margin-right: auto;
         }
 
-        /* 記録画面と復習画面は1200pxの横幅をフルに活かす */
         #screen-records, #screen-review {
             max-width: 100%;
         }
@@ -147,7 +146,7 @@
         /* 2. ホーム画面 */
         .user-welcome { 
             text-align: center; 
-            margin-bottom: 32px; 
+            margin-bottom: 40px; 
             font-size: 1.25rem; 
             font-weight: 400; 
             color: var(--slate-600);
@@ -297,7 +296,7 @@
         
         @media (max-width: 767px) {
             .numeric-keyboard {
-                display: none !important; /* スマホ時は非表示 */
+                display: none !important; 
             }
         }
         
@@ -476,7 +475,18 @@
 
         .unit-val { font-size: 0.75rem; color: var(--slate-400); font-weight: 400; margin-left: 2px; }
 
-        /* 5. 新設：復習メニュー画面用スタイル */
+        /* 修正点：ホームに戻るコンテナの最前面化設定（z-indexの競合を解決） */
+        .back-home-container { 
+            margin-top: 20px; 
+            width: 100%; 
+            max-width: 300px; 
+            margin-left: auto; 
+            margin-right: auto; 
+            position: relative; 
+            z-index: 999; /* 重なり順を最高位にしてクリック不可バグを完全に修正 */
+        }
+
+        /* 5. 復習メニュー画面用スタイル */
         .review-container h3 {
             font-size: 1.1rem;
             color: var(--slate-600);
@@ -491,9 +501,10 @@
         }
         @media (min-width: 768px) {
             .review-grid {
-                grid-template-columns: repeat(10, 1fr); /* PC時は10分割表示 */
+                grid-template-columns: repeat(10, 1fr); 
             }
         }
+        
         .review-item-btn {
             background: white;
             border: 1px solid var(--slate-200);
@@ -505,11 +516,27 @@
             box-shadow: 0 2px 4px rgba(0,0,0,0.02);
             box-sizing: border-box;
         }
-        .review-item-btn:hover {
-            border-color: var(--primary);
-            background: var(--primary-soft);
-            transform: translateY(-2px);
+
+        /* 新設：正答率・未トライ状況に応じた動的カラーデザイン */
+        .review-item-btn.disabled {
+            background: #e2e8f0 !important; /* 未トライ：グレーダウン */
+            border-color: #cbd5e1 !important;
+            cursor: not-allowed !important;
+            pointer-events: none !important; /* ボタンを押せなくする */
+            opacity: 0.55;
         }
+        .review-item-btn.disabled .review-item-name { color: #94a3b8 !important; }
+        
+        .review-item-btn.perfect { background: #d1fae5 !important; border-color: #10b981 !important; } /* 100%: 薄緑 */
+        .review-item-btn.high { background: #eff6ff !important; border-color: #3b82f6 !important; }    /* 80%以上: 薄青 */
+        .review-item-btn.mid { background: #fffbeb !important; border-color: #f59e0b !important; }     /* 50%以上: 薄黄 */
+        .review-item-btn.low { background: #fef2f2 !important; border-color: #ef4444 !important; }     /* 50%未満: 薄赤 */
+
+        .review-item-btn:not(.disabled):hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        }
+        
         .review-item-name {
             font-weight: 700;
             font-size: 0.95rem;
@@ -517,18 +544,13 @@
         }
         .review-item-rate {
             font-size: 0.75rem;
-            color: var(--slate-500);
+            color: var(--slate-600);
             margin-top: 4px;
-            background: var(--slate-50);
+            background: rgba(255,255,255,0.6);
             padding: 2px 0;
             border-radius: 6px;
+            font-weight: 600;
         }
-        .review-item-btn:hover .review-item-rate {
-            background: white;
-            color: var(--primary);
-        }
-
-        .back-home-container { margin-top: auto; width: 100%; max-width: 300px; margin-left: auto; margin-right: auto; }
     </style>
 </head>
 <body>
@@ -664,14 +686,13 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
-    // アプリ状態管理
     let currentUser = null; 
     let userId = ""; 
     let studyStartTime = null; 
     let currentQuestions = []; 
     let currentPrintName = "A1";
-    let activeInput = null; // 現在点滅フォーカスしているインプット要素の保持
-    let isReviewMode = false; // 復習モード判定用システムフラグ
+    let activeInput = null; 
+    let isReviewMode = false; 
     
     let sessionCount = 0;
     let sessionCorrectQuestions = 0;
@@ -750,17 +771,14 @@
         document.getElementById('progress-gauge').style.background = `conic-gradient(var(--primary) ${percent}%, var(--slate-100) ${percent}%)`;
     }
 
-    // 選択位置または全選択範囲を完全に考慮して正確にマイナスなどを挿入する関数
     function insertTextAtCursor(input, text) {
         const start = input.selectionStart;
         const end = input.selectionEnd;
         const val = input.value;
         input.value = val.substring(0, start) + text + val.substring(end);
-        // 入力した直後にカーソルを移動
         input.selectionStart = input.selectionEnd = start + text.length;
     }
 
-    // 画面上テンキーのイベント
     document.querySelectorAll('.key-btn').forEach(btn => {
         btn.addEventListener('mousedown', (e) => {
             e.preventDefault(); 
@@ -800,7 +818,6 @@
         renderRecords();
     });
 
-    // 復習メニューへの遷移導線
     document.getElementById('nav-review').addEventListener('click', () => {
         renderReviewMenu();
         showScreen('screen-review');
@@ -811,11 +828,14 @@
         showScreen('screen-home');
     });
 
-    // 各日付ログから各プリントの「最新の正答率」を正確に抽出する集計パーサー
+    // 記録画面のホームに戻るボタンイベントの登録
+    document.getElementById('btn-record-back').addEventListener('click', () => {
+        showScreen('screen-home');
+    });
+
     function getLatestPrintRates() {
         const rates = {};
         if (currentUser && currentUser.daily_stats) {
-            // 日付文字列を古い順（昇順）にソートして走査することで、最新データに自然に上書きされる
             const sortedDates = Object.keys(currentUser.daily_stats).sort();
             sortedDates.forEach(date => {
                 const dayPrints = currentUser.daily_stats[date].prints || {};
@@ -827,7 +847,7 @@
         return rates;
     }
 
-    // 復習グリッド（A1〜50, B1〜50）の動的構築
+    // 仕様変更点：未トライ問題のグレー無効化 ＆ 正答率別の背景クラス割り当て
     function renderReviewMenu() {
         const rates = getLatestPrintRates();
         
@@ -836,10 +856,26 @@
             grid.innerHTML = "";
             for (let i = 1; i <= 50; i++) {
                 const printId = `${prefix}${i}`;
-                const rateInfo = rates[printId] !== undefined ? `${rates[printId]}%` : "未トライ";
+                const hasRate = rates[printId] !== undefined;
+                const rate = rates[printId];
+                const rateInfo = hasRate ? `${rate}%` : "未トライ";
                 
                 const cell = document.createElement('div');
                 cell.className = 'review-item-btn';
+                
+                // 動的な状態（カラー・pointer-events）の判定クラス追加
+                if (!hasRate) {
+                    cell.classList.add('disabled'); // 未トライ：グレーかつ押せなくする
+                } else if (rate === 100) {
+                    cell.classList.add('perfect'); // 100%: 緑
+                } else if (rate >= 80) {
+                    cell.classList.add('high');    // 80%以上: 青
+                } else if (rate >= 50) {
+                    cell.classList.add('mid');     // 50%以上: 黄
+                } else {
+                    cell.classList.add('low');     // 50%未満: 赤
+                }
+
                 cell.innerHTML = `
                     <div class="review-item-name">${printId}</div>
                     <div class="review-item-rate">${rateInfo}</div>
@@ -848,7 +884,7 @@
                 cell.addEventListener('click', () => {
                     if (confirm(`${printId} の復習（再挑戦）を始めますか？`)) {
                         isReviewMode = true;
-                        currentPrintName = printId; // 復習対象ターゲットに強制切り替え
+                        currentPrintName = printId; 
                         showScreen('screen-study');
                         startStudySession();
                     }
@@ -982,7 +1018,6 @@
                 });
             });
 
-            // ボタン表示の初期化（復習ボタンは隠す）
             document.getElementById('btn-check-answers').style.display = 'block';
             document.getElementById('btn-next-print').style.display = 'none';
             document.getElementById('btn-back-to-review').style.display = 'none';
@@ -1002,7 +1037,6 @@
         }
     }
 
-    // 答え合わせ処理
     document.getElementById('btn-check-answers').addEventListener('click', async () => {
         let correctCount = 0;
         let results = [];
@@ -1059,16 +1093,13 @@
 
         saveSinglePrintLog(currentPrintName, correctRate);
 
-        // ボタンの動的制御切り替え
         document.getElementById('btn-check-answers').style.display = 'none';
         document.getElementById('btn-end-study').style.display = 'none'; 
 
         if (isReviewMode) {
-            // 復習モード時は専用ボタンを表示
             document.getElementById('btn-next-print').style.display = 'none';
             document.getElementById('btn-back-to-review').style.display = 'block';
         } else {
-            // 通常モード時は次へボタンを表示
             document.getElementById('btn-next-print').style.display = 'block';
             document.getElementById('btn-back-to-review').style.display = 'none';
         }
@@ -1088,7 +1119,6 @@
         }
     }
 
-    // 通常モード専用：次へボタンの挙動
     document.getElementById('btn-next-print').addEventListener('click', () => {
         const match = currentPrintName.match(/([A-Z]+)(\d+)/);
         let alpha = match[1];
@@ -1104,7 +1134,6 @@
         loadPrintQuestions();
     });
 
-    // 復習モード専用：復習終了＆Firebase更新コミット
     document.getElementById('btn-back-to-review').addEventListener('click', async () => {
         const elapsedMin = Math.max(1, Math.round((Date.now() - studyStartTime) / 1000 / 60));
         const now = new Date();
@@ -1126,29 +1155,25 @@
         if(!todayStats.print_numbers) todayStats.print_numbers = [];
         todayStats.print_numbers = todayStats.print_numbers.concat(sessionPrintNumbers);
 
-        // 正答率のマップをマージ更新（上書き反映）
         if(!todayStats.prints) todayStats.prints = {};
         for(let p in sessionPrintsData) {
             todayStats.prints[p] = sessionPrintsData[p];
         }
 
         currentUser.total_duration = (currentUser.total_duration || 0) + elapsedMin;
-        // 復習完了時は通常学習の進捗（current_print）はあえて書き換えない
 
         await updateDoc(userRef, {
             total_duration: currentUser.total_duration,
             daily_stats: currentUser.daily_stats
         });
 
-        // 状態を初期化して復習画面へ戻る
         isReviewMode = false;
         currentPrintName = currentUser.current_print || "A1"; 
         
-        renderReviewMenu(); // 復習グリッドの正答率表示を最新版に更新
+        renderReviewMenu(); 
         showScreen('screen-review');
     });
 
-    // 通常モード専用：今日の学習を終了する
     document.getElementById('btn-end-study').addEventListener('click', async () => {
         const elapsedMin = Math.max(1, Math.round((Date.now() - studyStartTime) / 1000 / 60));
         const now = new Date();
