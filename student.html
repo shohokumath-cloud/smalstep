@@ -256,10 +256,10 @@
             z-index: 1000;
         }
 
-        /* 修正点：キーボードを押しやすい8列構成に最適化 */
+        /* 修正点：数字は1列(1段)目、2段目に0と各種記号が並ぶ「9列×2段」にリデザイン */
         .numeric-keyboard {
             display: grid;
-            grid-template-columns: repeat(8, 1fr);
+            grid-template-columns: repeat(9, 1fr);
             gap: 6px;
             margin-bottom: 24px;
             width: 100%;
@@ -376,11 +376,11 @@
             border-radius: 1px;
         }
 
-        /* 🌟数式入力ラッパーと透明化の新規スタイル群 */
+        /* 数式入力ラッパーと透明化のスタイル群 */
         .input-math-wrapper {
             position: relative;
             display: inline-block;
-            width: 75px; /* x^2 や多項式が入るよう幅を少し拡張 */
+            width: 95px; /* 多項式やルート表現が入るよう幅を1.3倍に最適化 */
             box-sizing: border-box;
         }
 
@@ -395,7 +395,7 @@
             font-weight: 600;
             outline: none;
             color: transparent !important; /* 入力テキスト自体は透明化 */
-            caret-color: var(--primary); /* カーソル(縦棒)だけは残す */
+            caret-color: var(--primary); /* カーソルだけは残す */
             transition: all 0.2s;
             box-sizing: border-box;
         }
@@ -409,7 +409,7 @@
             position: absolute;
             top: 0; left: 0;
             width: 100%; height: 100%;
-            pointer-events: none; /* 下層にある本物のインプットへのタップを妨げない */
+            pointer-events: none; 
             display: flex;
             align-items: center;
             justify-content: center;
@@ -418,7 +418,6 @@
             color: var(--primary);
             font-weight: 500;
         }
-        /* 正誤判定時の数式カラー制御 */
         .answer-box.is-correct + .math-preview { color: #166534 !important; }
         .answer-box.is-incorrect + .math-preview { color: #991b1b !important; }
 
@@ -448,7 +447,7 @@
                 margin: 5px 0;
             }
             .input-math-wrapper {
-                width: 90px; /* PC版ではさらにゆったり数式を魅せる */
+                width: 120px; 
             }
             .answer-box {
                 padding: 10px 4px; 
@@ -689,7 +688,7 @@
             <button class="btn btn-secondary btn-end-compact" id="btn-end-study">学習を終了する</button>
         </div>
 
-        <!-- 修正点：数学記述用にリデザインされたキーボードレイアウト（C, x, x² を追加） -->
+        <!-- 修正点：数字は1段目、0と記号(x, x², √)は2段目に完璧に整列した「9列構成」 -->
         <div class="numeric-keyboard">
             <div class="key-btn" data-val="1">1</div>
             <div class="key-btn" data-val="2">2</div>
@@ -698,15 +697,16 @@
             <div class="key-btn" data-val="5">5</div>
             <div class="key-btn" data-val="6">6</div>
             <div class="key-btn" data-val="7">7</div>
-            <div class="key-btn" data-val="x" style="font-style: italic; font-family: 'Times New Roman', serif;">x</div>
-            
             <div class="key-btn" data-val="8">8</div>
             <div class="key-btn" data-val="9">9</div>
+            
             <div class="key-btn" data-val="0">0</div>
             <div class="key-btn" data-val="-">-</div>
-            <div class="key-btn" data-val="^2" style="font-style: italic; font-family: 'Times New Roman', serif;">x²</div>
+            <div class="key-btn" data-val="x" style="font-style: italic; font-family: 'Times New Roman', serif;">x</div>
+            <div class="key-btn" data-val="x²" style="font-style: italic; font-family: 'Times New Roman', serif;">x²</div>
+            <div class="key-btn" data-val="√" style="font-family: 'Times New Roman', serif;">√</div>
             <div class="key-btn" data-val="clear" style="color: var(--danger);">C</div>
-            <div class="key-btn enter-key" data-val="enter" style="grid-column: span 2;">↵</div>
+            <div class="key-btn enter-key" data-val="enter" style="grid-column: span 3;">↵</div>
         </div>
         
         <div style="width: 100%; display: flex; justify-content: center; flex: 1; overflow-y: auto;">
@@ -804,6 +804,18 @@
     const score100Svg = `<svg viewBox="0 0 200 100" preserveAspectRatio="xMidYMid meet" style="width:100%; height:100%;"><path class="handwritten-path draw-100" d="M40,20 L40,80" /><path class="handwritten-path draw-100" d="M90,50 C90,30 80,20 70,20 C60,20 50,35 50,50 C50,65 60,80 70,80 C80,80 90,65 90,50" /><path class="handwritten-path draw-100" d="M140,50 C140,30 130,20 120,20 C110,20 100,35 100,50 C100,65 110,80 120,80 C130,80 140,65 140,50" /><path class="handwritten-path draw-100" d="M30,90 Q100,85 160,95" /></svg>`;
 
     const sleep = ms => new Promise(res => setTimeout(res, ms));
+
+    // 修正点：画面表示される「直感的な文字列」を内部で正しいLaTeX記法にコンバートする核心関数
+    function convertToLatex(val) {
+        let text = val.trim();
+        // x² を x^2 に自動変換
+        text = text.replace(/x²/g, 'x^2');
+        // √の直後に続く数字・変数・符号の並びを検知し、\sqrt{} 内にきれいに収める
+        text = text.replace(/√([0-9x\+\-\/\*\(\)]+)/g, '\\sqrt{$1}');
+        // ルートだけが打たれている、または末尾に独立している場合は \sqrt{}
+        text = text.replace(/√/g, '\\sqrt{}');
+        return text;
+    }
 
     function applySeriesTheme(printName) {
         if (!printName) return;
@@ -918,7 +930,6 @@
         input.selectionStart = input.selectionEnd = start + text.length;
     }
 
-    // 修正点：キー入力処理を文字対応、C(クリア)対応に拡張
     document.querySelectorAll('.key-btn').forEach(btn => {
         btn.addEventListener('mousedown', (e) => {
             e.preventDefault(); 
@@ -932,7 +943,7 @@
                 activeInput.dispatchEvent(new Event('input')); 
             } else {
                 insertTextAtCursor(activeInput, val);
-                activeInput.dispatchEvent(new Event('input')); // リアルタイム数式描画をキック
+                activeInput.dispatchEvent(new Event('input')); 
             }
         });
     });
@@ -1039,7 +1050,7 @@
         generateGrid('review-grid-c', 'C');
         generateGrid('review-grid-d', 'D');
         generateGrid('review-grid-e', 'E');
-        generateGrid('review-grid-f', 'F');
+        generateGrid('review-grid-f', 'G');
         generateGrid('review-grid-g', 'G');
     }
 
@@ -1099,7 +1110,6 @@
                 }
             });
 
-            // 修正点：inputを数式レイヤー付きラッパー構造でラップして出力するヘルパー
             const wrapMathInput = (inputHtmlString) => {
                 return `
                     <div class="input-math-wrapper">
@@ -1122,7 +1132,6 @@
                 const ansDen = el.getAttribute('data-ans-den');
                 const ansSingle = el.getAttribute('data-ans');
 
-                // 修正点：各inputボックスをwrapMathInputで包み込む
                 if (ansNum !== null && ansDen !== null) {
                     inputHtml = `
                         <div class="fraction-container">
@@ -1131,14 +1140,14 @@
                             ${wrapMathInput(`<input type="text" class="answer-box den-input" data-ans="${ansDen}" ${isExample ? `value="${ansDen}" disabled` : ''}>`)}
                         </div>
                     `;
-                    correctAnswers = [ansNum, ansDen]; // 文字列として保持
+                    correctAnswers = [ansNum, ansDen]; 
                 } else if (ansSingle !== null) {
                     inputHtml = `
                         <div style="margin-left:10px;">
                             ${wrapMathInput(`<input type="text" class="answer-box single-input" data-ans="${ansSingle}" ${isExample ? `value="${ansSingle}" disabled` : ''}>`)}
                         </div>
                     `;
-                    correctAnswers = [ansSingle]; // 文字列として保持
+                    correctAnswers = [ansSingle]; 
                 }
 
                 if (!rawText.includes('\\(') && !rawText.includes('$')) {
@@ -1170,7 +1179,7 @@
                     });
                 }
 
-                // 修正点：各インプットに対するリアルタイムMathJaxバインド機構
+                // 各インプットに対するリアルタイムコンバート＆MathJaxバインド機構
                 const cardBoxes = item.querySelectorAll('.answer-box');
                 const cardPreviews = item.querySelectorAll('.math-preview');
                 cardBoxes.forEach((input, idx) => {
@@ -1178,15 +1187,16 @@
                     
                     const triggerPreview = () => {
                         let val = input.value;
-                        // MathJax用にテキスト表現を整形（例：x^2 はそのままで美しい上付きになります）
-                        previewEl.innerHTML = val ? `\\(${val}\\)` : '';
+                        // 画面上のテキスト表現をLaTeXに変換してMathJaxに読み込ませる
+                        let latex = convertToLatex(val);
+                        previewEl.innerHTML = val ? `\\(${latex}\\)` : '';
                         if (window.MathJax && window.MathJax.typesetPromise) {
                             window.MathJax.typesetPromise([previewEl]);
                         }
                     };
 
                     input.addEventListener('input', triggerPreview);
-                    if (input.value) triggerPreview(); // 初期値（例題用）があれば描画
+                    if (input.value) triggerPreview(); 
                 });
 
                 return item;
@@ -1244,8 +1254,7 @@
 
             const allActiveBoxes = container.querySelectorAll('.answer-box:not([disabled])');
             allActiveBoxes.forEach((input) => {
-                // 文字入力を許容するためinputmodeを変更
-                input.setAttribute('inputmode', 'none'); // ソフトウェアキーボードの不必要な競合を防ぐ
+                input.setAttribute('inputmode', 'none'); 
 
                 input.addEventListener('focus', () => {
                     activeInput = input;
@@ -1282,8 +1291,8 @@
             let isCardAllCorrect = true; 
 
             qData.inputs.forEach((input, inputIdx) => {
-                // 修正点：文字列として表記揺れをクリアにして正確に文字列マッチング
-                const userAns = input.value.trim().replace(/\s+/g, '').toLowerCase();
+                // 修正点：ユーザー入力をLaTeX化した上で、解答用ファイル側の指定文字列(空白削除、小文字統一)と厳密マッチング
+                const userAns = convertToLatex(input.value).trim().replace(/\s+/g, '').toLowerCase();
                 const correctAns = qData.answers[inputIdx].toString().trim().replace(/\s+/g, '').toLowerCase();
 
                 input.classList.remove('is-correct', 'is-incorrect');
