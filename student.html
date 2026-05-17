@@ -533,12 +533,14 @@
         .td-count { width: 90px; color: #475569 !important; font-weight: 600 !important; }
         .td-rate { width: 100px; border-right: 1px solid var(--slate-200) !important; color: var(--primary) !important; font-weight: 700 !important; }
         
-        .td-progress-graph { padding: 0 !important; width: auto; position: relative; }
+        /* 修正点：テーブルの他列の高さ変動に100%連動・追随させるための height: 1px ハックを適用 */
+        .td-progress-graph { padding: 0 !important; width: auto; position: relative; height: 1px; }
         
+        /* 修正点：縦に積み重なるバーを格納するラッパー。フレックスの割合1(flex: 1)で自動的に親セルの高さいっぱいに分配・膨張 */
         .graph-wrapper { 
             display: flex; 
             width: 100%; 
-            min-height: 26px; /* 多段時の収まりが良くなるよう数ピクセル微調整 */
+            flex: 1; /* 親要素の flex-direction: column 内で均等に縦幅を使い切る */
         }
         .graph-cell { 
             flex: 1; 
@@ -550,7 +552,6 @@
         }
         .graph-cell:last-child { border-right: none; }
         
-        /* 修正点：縦に積み重なった際に隙間が一切出ないよう、topとbottomを0に、角丸(border-radius)もフラット化 */
         .progress-bar-fill {
             position: absolute;
             top: 0; bottom: 0;
@@ -583,10 +584,9 @@
             }
         }
         
-        /* 修正点：指示通り、枠線の色はすべて「通常通りの色(slate-200)」に完全統一 */
         .review-item-btn {
             background: white !important;
-            border: 1px solid var(--slate-200) !important; /* 強制統一 */
+            border: 1px solid var(--slate-200) !important; 
             border-radius: 12px;
             padding: 12px 4px;
             text-align: center;
@@ -605,7 +605,6 @@
         }
         .review-item-btn.disabled .review-item-name { color: #94a3b8 !important; }
         
-        /* 枠線のカラー分岐を消去し、テキストのカラー制御のみを維持 */
         .review-item-btn.perfect .review-item-name, .review-item-btn.perfect .review-item-rate { color: #10b981 !important; }
         .review-item-btn.high .review-item-name,    .review-item-btn.high .review-item-rate    { color: #3b82f6 !important; }
         .review-item-btn.mid .review-item-name,     .review-item-btn.mid .review-item-rate     { color: #f59e0b !important; }
@@ -1468,7 +1467,7 @@
         showScreen('screen-home');
     });
 
-    // 進捗グラフのレンダリング機構（修正：隙間ゼロ化 ＆ 可変型スタック表示）
+    // 進捗グラフのレンダリング機構（修正：縦幅を余白なく100%均等自動伸縮させるロジックへ進化）
     function renderRecords() {
         const listContainer = document.getElementById('timeline-list');
         listContainer.innerHTML = "";
@@ -1502,17 +1501,15 @@
                 gradeMap['A'] = stats.print_numbers;
             }
 
-            // 修正点：セルのpaddingを極限まで排除。中の要素を完全に密着させてgapを0pxに指定
-            let graphHtml = '<td class="td-progress-graph" colspan="10" style="padding: 0px !important; vertical-align: middle;"><div style="display: flex; flex-direction: column; gap: 0px; width: 100%;">';
+            // 修正点：height: 100% と flex-direction: column を組み合わせ、縦の余白を出さない極限コンテナを構成
+            let graphHtml = '<td class="td-progress-graph" colspan="10" style="padding: 0px !important; vertical-align: stretch;"><div style="display: flex; flex-direction: column; height: 100%; width: 100%; min-height: 52px; justify-content: stretch; align-items: stretch;">';
             const sortedGrades = Object.keys(gradeMap).sort();
 
             if (sortedGrades.length === 0) {
-                // 何もない日は通常の1段分だけをダミーとして確保
                 graphHtml += '<div class="graph-wrapper">';
                 for(let i=0; i<10; i++) graphHtml += '<div class="graph-cell"></div>';
                 graphHtml += '</div>';
             } else {
-                // 各グレードのループ（Aグレードだけ、Bグレードだけの日は自動的にこの中が一回しか回らないので、固定の2段にならず綺麗な1段になります）
                 sortedGrades.forEach(g => {
                     const nums = gradeMap[g];
                     const minQ = Math.min(...nums);
