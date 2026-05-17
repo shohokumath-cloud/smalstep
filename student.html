@@ -256,7 +256,6 @@
             z-index: 1000;
         }
 
-        /* 修正点：数字は1列(1段)目、2段目に0と各種記号が並ぶ「9列×2段」にリデザイン */
         .numeric-keyboard {
             display: grid;
             grid-template-columns: repeat(9, 1fr);
@@ -376,11 +375,10 @@
             border-radius: 1px;
         }
 
-        /* 数式入力ラッパーと透明化のスタイル群 */
         .input-math-wrapper {
             position: relative;
             display: inline-block;
-            width: 95px; /* 多項式やルート表現が入るよう幅を1.3倍に最適化 */
+            width: 95px; 
             box-sizing: border-box;
         }
 
@@ -394,8 +392,8 @@
             text-align: center;
             font-weight: 600;
             outline: none;
-            color: transparent !important; /* 入力テキスト自体は透明化 */
-            caret-color: var(--primary); /* カーソルだけは残す */
+            color: transparent !important; 
+            caret-color: var(--primary); 
             transition: all 0.2s;
             box-sizing: border-box;
         }
@@ -404,7 +402,6 @@
         .answer-box.is-correct { border-color: var(--success) !important; background-color: #f0fdf4; }
         .answer-box.is-incorrect { border-color: var(--danger) !important; background-color: #fef2f2; }
 
-        /* リアルタイムにMathJaxを投影する絶対配置レイヤー */
         .math-preview {
             position: absolute;
             top: 0; left: 0;
@@ -537,7 +534,13 @@
         .td-rate { width: 100px; border-right: 1px solid var(--slate-200) !important; color: var(--primary) !important; font-weight: 700 !important; }
         
         .td-progress-graph { padding: 0 !important; width: auto; position: relative; }
-        .graph-wrapper { display: flex; height: 100%; width: 100%; min-height: 52px; }
+        
+        /* 修正点：縦に段（行）を積み重ねられるように調整したマルチグラフコンテナ */
+        .graph-wrapper { 
+            display: flex; 
+            width: 100%; 
+            min-height: 28px; /* 複数段になっても綺麗に収まるスマートな高さに調整 */
+        }
         .graph-cell { 
             flex: 1; 
             border-right: 1px dashed var(--slate-200); 
@@ -548,15 +551,15 @@
         }
         .graph-cell:last-child { border-right: none; }
         
+        /* 修正点：グラデーションを撤廃し、ソリッド単色かつ影なしにリファイン */
         .progress-bar-fill {
             position: absolute;
-            top: 8px; bottom: 8px;
-            background: var(--btn-gradient); 
+            top: 3px; bottom: 3px;
             border-radius: 4px;
             display: flex; align-items: center; justify-content: center;
             color: white; font-size: 0.75rem; font-weight: 600;
-            box-shadow: 0 2px 4px rgba(14, 165, 233, 0.25);
             transition: all 0.5s ease;
+            box-shadow: none !important; /* シャドウを消してフラットに */
         }
 
         .unit-val { font-size: 0.75rem; color: var(--slate-400); font-weight: 400; margin-left: 2px; }
@@ -581,8 +584,9 @@
             }
         }
         
+        /* 修正点：しかくの中の背景色はすべて「通常通りの白」のまま固定 */
         .review-item-btn {
-            background: white;
+            background: white !important;
             border: 1px solid var(--slate-200);
             border-radius: 12px;
             padding: 12px 4px;
@@ -602,10 +606,16 @@
         }
         .review-item-btn.disabled .review-item-name { color: #94a3b8 !important; }
         
-        .review-item-btn.perfect { background: #d1fae5 !important; border-color: #10b981 !important; } 
-        .review-item-btn.high { background: #eff6ff !important; border-color: #3b82f6 !important; }    
-        .review-item-btn.mid { background: #fffbeb !important; border-color: #f59e0b !important; }     
-        .review-item-btn.low { background: #fef2f2 !important; border-color: #ef4444 !important; }     
+        /* 修正点：背景色の変化を撤廃し、文字色（Color）と枠線の変化のみでステータスを表現 */
+        .review-item-btn.perfect { border-color: #10b981 !important; } 
+        .review-item-btn.high    { border-color: #3b82f6 !important; }    
+        .review-item-btn.mid     { border-color: #f59e0b !important; }     
+        .review-item-btn.low     { border-color: #ef4444 !important; }     
+
+        .review-item-btn.perfect .review-item-name, .review-item-btn.perfect .review-item-rate { color: #10b981 !important; }
+        .review-item-btn.high .review-item-name,    .review-item-btn.high .review-item-rate    { color: #3b82f6 !important; }
+        .review-item-btn.mid .review-item-name,     .review-item-btn.mid .review-item-rate     { color: #f59e0b !important; }
+        .review-item-btn.low .review-item-name,     .review-item-btn.low .review-item-rate     { color: #ef4444 !important; }
 
         .review-item-btn:not(.disabled):hover {
             transform: translateY(-2px);
@@ -617,14 +627,16 @@
             font-size: 0.95rem;
             color: var(--slate-800);
         }
+        
+        /* 修正点：文字の周りを囲む背景色や余白（padding）を完全に撤廃 */
         .review-item-rate {
             font-size: 0.75rem;
             color: var(--slate-600);
             margin-top: 4px;
-            background: rgba(255,255,255,0.6);
-            padding: 2px 0;
-            border-radius: 6px;
             font-weight: 600;
+            background: none !important; /* 背景色なし */
+            padding: 0 !important;       /* 囲み用の余白なし */
+            border-radius: 0 !important;
         }
         .mjx-container { display: inline-block !important; margin: 0 !important; vertical-align: middle; }
     </style>
@@ -688,7 +700,6 @@
             <button class="btn btn-secondary btn-end-compact" id="btn-end-study">学習を終了する</button>
         </div>
 
-        <!-- 修正点：数字は1段目、0と記号(x, x², √)は2段目に完璧に整列した「9列構成」 -->
         <div class="numeric-keyboard">
             <div class="key-btn" data-val="1">1</div>
             <div class="key-btn" data-val="2">2</div>
@@ -805,14 +816,10 @@
 
     const sleep = ms => new Promise(res => setTimeout(res, ms));
 
-    // 修正点：画面表示される「直感的な文字列」を内部で正しいLaTeX記法にコンバートする核心関数
     function convertToLatex(val) {
         let text = val.trim();
-        // x² を x^2 に自動変換
         text = text.replace(/x²/g, 'x^2');
-        // √の直後に続く数字・変数・符号の並びを検知し、\sqrt{} 内にきれいに収める
         text = text.replace(/√([0-9x\+\-\/\*\(\)]+)/g, '\\sqrt{$1}');
-        // ルートだけが打たれている、または末尾に独立している場合は \sqrt{}
         text = text.replace(/√/g, '\\sqrt{}');
         return text;
     }
@@ -1050,7 +1057,7 @@
         generateGrid('review-grid-c', 'C');
         generateGrid('review-grid-d', 'D');
         generateGrid('review-grid-e', 'E');
-        generateGrid('review-grid-f', 'G');
+        generateGrid('review-grid-f', 'F'); // 修正点：バグになっていたFグレード・Gグレードのマッピングを修正
         generateGrid('review-grid-g', 'G');
     }
 
@@ -1179,7 +1186,6 @@
                     });
                 }
 
-                // 各インプットに対するリアルタイムコンバート＆MathJaxバインド機構
                 const cardBoxes = item.querySelectorAll('.answer-box');
                 const cardPreviews = item.querySelectorAll('.math-preview');
                 cardBoxes.forEach((input, idx) => {
@@ -1187,7 +1193,6 @@
                     
                     const triggerPreview = () => {
                         let val = input.value;
-                        // 画面上のテキスト表現をLaTeXに変換してMathJaxに読み込ませる
                         let latex = convertToLatex(val);
                         previewEl.innerHTML = val ? `\\(${latex}\\)` : '';
                         if (window.MathJax && window.MathJax.typesetPromise) {
@@ -1291,7 +1296,6 @@
             let isCardAllCorrect = true; 
 
             qData.inputs.forEach((input, inputIdx) => {
-                // 修正点：ユーザー入力をLaTeX化した上で、解答用ファイル側の指定文字列(空白削除、小文字統一)と厳密マッチング
                 const userAns = convertToLatex(input.value).trim().replace(/\s+/g, '').toLowerCase();
                 const correctAns = qData.answers[inputIdx].toString().trim().replace(/\s+/g, '').toLowerCase();
 
@@ -1471,6 +1475,7 @@
         showScreen('screen-home');
     });
 
+    // 修正点：進捗グラフの「マルチグレード対応・複数段（スタック）レンダリング」のアルゴリズム
     function renderRecords() {
         const listContainer = document.getElementById('timeline-list');
         listContainer.innerHTML = "";
@@ -1487,42 +1492,81 @@
             const displayDate = date.split('-').slice(1).join('/'); 
             const dailyRate = stats.total_questions ? Math.round((stats.total_correct / stats.total_questions) * 100) : 0;
 
-            let minQ = 0;
-            let maxQ = 0;
-            if(stats.print_numbers && stats.print_numbers.length > 0) {
-                minQ = Math.min(...stats.print_numbers);
-                maxQ = Math.max(...stats.print_numbers);
+            const dayPrints = stats.prints || {};
+            const gradeMap = {};
+
+            // printsに格納されているKey (例: "A1", "B12") から正確にグレードと番号を再マッピング
+            for (let printId in dayPrints) {
+                const m = printId.match(/([A-Z]+)(\d+)/);
+                if (m) {
+                    const grade = m[1];
+                    const num = parseInt(m[2]);
+                    if (!gradeMap[grade]) gradeMap[grade] = [];
+                    gradeMap[grade].push(num);
+                }
             }
 
-            let graphHtml = '<td class="td-progress-graph" colspan="10"><div class="graph-wrapper">';
-            
-            for(let i=0; i<10; i++) {
-                const cellStart = i * 5 + 1; 
-                const cellEnd = (i + 1) * 5; 
+            // 古い互換データ用フォールバック
+            if (Object.keys(gradeMap).length === 0 && stats.print_numbers && stats.print_numbers.length > 0) {
+                gradeMap['A'] = stats.print_numbers;
+            }
 
-                if (minQ > 0 && maxQ > 0) {
-                    if (minQ <= cellEnd && maxQ >= cellStart) {
-                        const overlapStart = Math.max(minQ, cellStart);
-                        const overlapEnd = Math.min(maxQ, cellEnd);
-                        const overlapCount = overlapEnd - overlapStart + 1;
-                        
-                        const fillPercent = (overlapCount / 5) * 100;
-                        const offsetPercent = ((overlapStart - cellStart) / 5) * 100;
-                        
-                        let label = `A${overlapStart}${overlapStart !== overlapEnd ? '-'+overlapEnd : ''}`;
-                        if (fillPercent === 100) label = `A${cellStart}-A${cellEnd}`;
-                        const showLabel = fillPercent >= 40 ? label : '';
-                        
-                        graphHtml += `
-                            <div class="graph-cell">
-                                <div class="progress-bar-fill" style="left: ${offsetPercent}%; width: ${fillPercent}%;">
-                                    ${showLabel}
-                                </div>
-                            </div>`;
-                        continue;
+            // グラフ用セルのHTML構築。縦並びのFlexコンテナとして包む
+            let graphHtml = '<td class="td-progress-graph" colspan="10" style="padding: 6px 12px !important; vertical-align: middle;"><div style="display: flex; flex-direction: column; gap: 4px; width: 100%;">';
+            const sortedGrades = Object.keys(gradeMap).sort();
+
+            if (sortedGrades.length === 0) {
+                graphHtml += '<div class="graph-wrapper">';
+                for(let i=0; i<10; i++) graphHtml += '<div class="graph-cell"></div>';
+                graphHtml += '</div>';
+            } else {
+                sortedGrades.forEach(g => {
+                    const nums = gradeMap[g];
+                    const minQ = Math.min(...nums);
+                    const maxQ = Math.max(...nums);
+                    
+                    // 修正点：グラデーションを廃止。各グレードに割り当てられたソリッド単色を定義
+                    let gColor = "#0ea5e9";
+                    switch(g) {
+                        case 'A': gColor = "#0ea5e9"; break;
+                        case 'B': gColor = "#16a34a"; break;
+                        case 'C': gColor = "#ea580c"; break;
+                        case 'D': gColor = "#9333ea"; break;
+                        case 'E': gColor = "#db2777"; break;
+                        case 'F': gColor = "#d97706"; break;
+                        case 'G': gColor = "#475569"; break;
                     }
-                }
-                graphHtml += `<div class="graph-cell"></div>`;
+                    
+                    graphHtml += `<div class="graph-wrapper">`;
+                    
+                    for(let i=0; i<10; i++) {
+                        const cellStart = i * 5 + 1; 
+                        const cellEnd = (i + 1) * 5; 
+
+                        if (minQ <= cellEnd && maxQ >= cellStart) {
+                            const overlapStart = Math.max(minQ, cellStart);
+                            const overlapEnd = Math.min(maxQ, cellEnd);
+                            const overlapCount = overlapEnd - overlapStart + 1;
+                            
+                            const fillPercent = (overlapCount / 5) * 100;
+                            const offsetPercent = ((overlapStart - cellStart) / 5) * 100;
+                            
+                            let label = `${g}${overlapStart}${overlapStart !== overlapEnd ? '-'+overlapEnd : ''}`;
+                            if (fillPercent === 100) label = `${g}${cellStart}-${g}${cellEnd}`;
+                            const showLabel = fillPercent >= 40 ? label : '';
+                            
+                            graphHtml += `
+                                <div class="graph-cell">
+                                    <div class="progress-bar-fill" style="left: ${offsetPercent}%; width: ${fillPercent}%; background: ${gColor};">
+                                        ${showLabel}
+                                    </div>
+                                </div>`;
+                        } else {
+                            graphHtml += `<div class="graph-cell"></div>`;
+                        }
+                    }
+                    graphHtml += '</div>';
+                });
             }
             
             graphHtml += '</div></td>';
