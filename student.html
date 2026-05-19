@@ -533,14 +533,12 @@
         .td-count { width: 90px; color: #475569 !important; font-weight: 600 !important; }
         .td-rate { width: 100px; border-right: 1px solid var(--slate-200) !important; color: var(--primary) !important; font-weight: 700 !important; }
         
-        /* 修正点：テーブルの他列の高さ変動に100%連動・追随させるための height: 1px ハックを適用 */
         .td-progress-graph { padding: 0 !important; width: auto; position: relative; height: 1px; }
         
-        /* 修正点：縦に積み重なるバーを格納するラッパー。フレックスの割合1(flex: 1)で自動的に親セルの高さいっぱいに分配・膨張 */
         .graph-wrapper { 
             display: flex; 
             width: 100%; 
-            flex: 1; /* 親要素の flex-direction: column 内で均等に縦幅を使い切る */
+            flex: 1; 
         }
         .graph-cell { 
             flex: 1; 
@@ -565,7 +563,7 @@
         .unit-val { font-size: 0.75rem; color: var(--slate-400); font-weight: 400; margin-left: 2px; }
         .back-home-container { margin-top: 20px; width: 100%; max-width: 300px; margin-left: auto; margin-right: auto; position: relative; z-index: 9999; }
 
-        /* 5. 復習メニュー画面用スタイル（修正：グリッド表示からリスト表示へ刷新） */
+        /* 5. 復習メニュー画面用スタイル（修正：文字は黒・正答率のみ着色仕様） */
         .review-container h3 {
             font-size: 1.1rem;
             color: var(--slate-600);
@@ -577,13 +575,6 @@
             flex-direction: column;
             gap: 8px;
             margin-bottom: 16px;
-        }
-        @media (min-width: 768px) {
-            .review-grid {
-                display: flex;
-                flex-direction: column;
-                gap: 8px;
-            }
         }
         
         .review-item-btn {
@@ -609,23 +600,14 @@
             pointer-events: none !important; 
             opacity: 0.55;
         }
-        .review-item-btn.disabled .review-item-name { color: #94a3b8 !important; }
         
-        .review-item-btn.perfect .review-item-name, .review-item-btn.perfect .review-item-rate { color: #10b981 !important; }
-        .review-item-btn.high .review-item-name,    .review-item-btn.high .review-item-rate    { color: #3b82f6 !important; }
-        .review-item-btn.mid .review-item-name,     .review-item-btn.mid .review-item-rate     { color: #f59e0b !important; }
-        .review-item-btn.low .review-item-name,     .review-item-btn.low .review-item-rate     { color: #ef4444 !important; }
-
-        .review-item-btn:not(.disabled):hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-        }
-        
+        /* 修正点：単元名テキストは常に明瞭な黒（#000000）で統一 */
         .review-item-name {
             font-weight: 700;
             font-size: 1rem;
-            color: var(--slate-800);
+            color: #000000;
         }
+        .review-item-btn.disabled .review-item-name { color: #94a3b8 !important; }
         
         .review-item-rate {
             font-size: 0.95rem;
@@ -635,6 +617,17 @@
             padding: 0 !important;       
             border-radius: 0 !important;
             white-space: nowrap;
+        }
+
+        /* 修正点：正答率（rate）の数値テキストのみにステータスカラーを反映 */
+        .review-item-btn.perfect .review-item-rate { color: #10b981 !important; }
+        .review-item-btn.high .review-item-rate    { color: #3b82f6 !important; }
+        .review-item-btn.mid .review-item-rate     { color: #f59e0b !important; }
+        .review-item-btn.low .review-item-rate     { color: #ef4444 !important; }
+
+        .review-item-btn:not(.disabled):hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
         }
         .mjx-container { display: inline-block !important; margin: 0 !important; vertical-align: middle; }
     </style>
@@ -754,19 +747,20 @@
         </div>
         
         <div class="review-scroll-area">
-            <h3>A</h3>
+            <!-- グループラベル名を修正 -->
+            <h3>A　数と式</h3>
             <div class="review-grid" id="review-grid-a"></div>
             
-            <h3>B</h3>
+            <h3>B　二次関数</h3>
             <div class="review-grid" id="review-grid-b"></div>
 
-            <h3>C</h3>
+            <h3>C　三角比</h3>
             <div class="review-grid" id="review-grid-c"></div>
 
-            <h3>D</h3>
+            <h3>D　集合と命題</h3>
             <div class="review-grid" id="review-grid-d"></div>
 
-            <h3>E</h3>
+            <h3>E　データの分析</h3>
             <div class="review-grid" id="review-grid-e"></div>
 
             <h3>F</h3>
@@ -795,10 +789,8 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
-    // アプリ内共通管理用のプリント単元名対応ディクショナリ
     const printUnitTitles = {
         "A1": "正負の数の加法",
-        // 今後必要に応じて他のプリント（例: "A2": "正負の数の減法"）を定義可能
     };
 
     let currentUser = null; 
@@ -1024,7 +1016,6 @@
                 const rate = rates[printId];
                 const rateInfo = hasRate ? `${rate}%` : "";
                 
-                // 対応表ディクショナリから単元名を取得
                 const unitTitle = printUnitTitles[printId] || "";
                 const displayTitle = unitTitle ? `${printId}　${unitTitle}` : printId;
                 
@@ -1103,7 +1094,6 @@
             const tempDiv = document.createElement('div');
             tempDiv.innerHTML = htmlText;
             
-            // 問題ファイル内に埋め込まれたメタデータから単元名を取得
             const metaEl = tempDiv.querySelector('.print-meta');
             const fileUnitTitle = metaEl ? metaEl.getAttribute('data-title') : (printUnitTitles[currentPrintName] || "");
             const fullHeaderTitle = fileUnitTitle ? `${currentPrintName}　${fileUnitTitle}` : currentPrintName;
@@ -1487,7 +1477,6 @@
         showScreen('screen-home');
     });
 
-    // 進捗グラフのレンダリング機構
     function renderRecords() {
         const listContainer = document.getElementById('timeline-list');
         listContainer.innerHTML = "";
