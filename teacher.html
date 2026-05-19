@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
@@ -34,7 +34,6 @@
             --slate-600: #475569;
             --slate-700: #334155;
             --slate-800: #1e293b;
-            --red-pen: rgba(255, 50, 50, 0.6); 
             --btn-gradient: linear-gradient(135deg, #22d3ee 0%, #2563eb 100%); 
         }
 
@@ -96,11 +95,11 @@
             padding-top: 1cm;
         }
 
-        #screen-records, #screen-summary {
+        #screen-records, #screen-summary, #screen-print {
             max-width: 100%;
         }
 
-        .table-responsive {
+        .table-responsive, .preview-responsive {
             flex: 1;
             overflow-y: auto;
             -webkit-overflow-scrolling: touch;
@@ -117,7 +116,6 @@
             to { opacity: 1; transform: translateY(0); }
         }
 
-        /* 大元のボタンコンポーネント */
         .btn {
             background: var(--btn-gradient); 
             color: white;
@@ -140,7 +138,6 @@
         .btn:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(14, 165, 233, 0.35); filter: brightness(1.04); }
         .btn:active { transform: translateY(0); }
         
-        /* 修正点：文字サイズに合わせて幅自動(auto)化、パディング調整、影をリセット */
         .btn-secondary {
             background: var(--slate-100) !important;
             color: var(--slate-700) !important;
@@ -154,7 +151,6 @@
         }
         .btn-secondary:hover { background: var(--slate-200) !important; transform: translateY(-1px) !important; }
 
-        /* 教員用ヘッダーデザイン */
         .panel-header {
             text-align: center;
             margin-bottom: 48px;
@@ -180,7 +176,6 @@
             width: 100%;
         }
 
-        /* ページ上部のアクションバー構造 */
         .page-top-bar {
             display: flex;
             justify-content: space-between;
@@ -192,19 +187,18 @@
             display: flex;
             align-items: center;
             gap: 16px;
-            flex: 1; /* 横幅を柔軟に確保 */
+            flex: 1; 
         }
         .page-title-side h2 {
             font-size: 1.6rem;
             color: var(--slate-800);
             font-weight: 800;
-            white-space: nowrap; /* タイトルの不自然な改行を防止 */
+            white-space: nowrap; 
         }
 
-        /* 生徒切り替えピッカー */
-        .student-picker {
+        .student-picker, .print-config-select {
             padding: 10px 36px 10px 16px;
-            font-size: 1.1rem;
+            font-size: 1.05rem;
             font-weight: 600;
             color: var(--slate-700);
             background-color: var(--slate-50);
@@ -219,7 +213,7 @@
             background-position: right 12px center;
             background-size: 16px;
         }
-        .student-picker:focus {
+        .student-picker:focus, .print-config-select:focus {
             border-color: var(--primary);
             background-color: white;
             box-shadow: 0 0 0 3px var(--primary-soft);
@@ -254,11 +248,11 @@
         .data-table tr:last-child td { border-bottom: none; }
         .data-table tr:hover td { background: var(--slate-50); }
         
-        .td-name-left { text-align: left !important; padding-left: 24px !important; font-weight: 700 !important; color: var(--slate-800) !important; width: 140px; }
+        .td-name-left { text-align: left !important; padding-left: 24px !important; font-weight: 700 !important; color: #000000 !important; width: 140px; }
         .td-date { font-weight: 600 !important; color: var(--slate-800) !important; width: 100px; }
         .td-time { width: 100px; }
         .td-count { width: 100px; color: #475569 !important; font-weight: 600 !important; }
-        .td-rate { width: 100px; border-right: 1px solid var(--slate-200) !important; color: #0284c7 !important; font-weight: 700 !important; }
+        .td-rate { width: 100px; border-right: 1px solid var(--slate-200) !important; color: var(--primary) !important; font-weight: 700 !important; }
         
         .td-badge-print { width: 120px; }
         .print-badge {
@@ -273,8 +267,8 @@
         }
 
         /* タイムラインの横長グラフ関連 */
-        .td-progress-graph { padding: 0 !important; width: auto; position: relative; }
-        .graph-wrapper { display: flex; height: 100%; width: 100%; min-height: 52px; }
+        .td-progress-graph { padding: 0 !important; width: auto; position: relative; height: 1px; }
+        .graph-wrapper { display: flex; height: 100%; width: 100%; min-height: 52px; justify-content: stretch; align-items: stretch; }
         .graph-cell { 
             flex: 1; 
             border-right: 1px dashed var(--slate-200); 
@@ -287,21 +281,175 @@
         
         .progress-bar-fill {
             position: absolute;
-            top: 8px; bottom: 8px;
-            background: var(--btn-gradient); 
-            border-radius: 4px;
+            top: 0; bottom: 0;
+            border-radius: 0; 
             display: flex; align-items: center; justify-content: center;
             color: white; font-size: 0.75rem; font-weight: 600;
-            box-shadow: 0 2px 4px rgba(14, 165, 233, 0.25);
             transition: all 0.5s ease;
+            box-shadow: none !important;
         }
         .unit-val { font-size: 0.75rem; color: var(--slate-400); font-weight: 400; margin-left: 2px; }
+
+        /* 印刷設定コントロール群 */
+        .print-control-panel {
+            display: flex;
+            gap: 16px;
+            align-items: center;
+            background: var(--slate-50);
+            padding: 16px 24px;
+            border-radius: 16px;
+            margin-bottom: 20px;
+            border: 1px solid var(--slate-200);
+            flex-wrap: wrap;
+        }
+        .print-control-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .print-control-group label {
+            font-size: 0.9rem;
+            font-weight: 700;
+            color: var(--slate-600);
+        }
+
+        /* 画面上でのプリントプレビュー用レイアウトスタイル */
+        .preview-responsive {
+            background: var(--slate-100);
+            padding: 30px;
+            display: flex;
+            flex-direction: column;
+            gap: 40px;
+            align-items: center;
+        }
+
+        /* 擬似A4横向き2面付けのスタイルカード設定 */
+        .preview-sheet-pair {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            width: 100%;
+            max-width: 1050px;
+            background: transparent;
+        }
+
+        .preview-print-card {
+            background: white;
+            border: 1px solid var(--slate-300);
+            border-radius: 8px;
+            padding: 24px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.04);
+            box-sizing: border-box;
+            min-height: 400px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .sheet-header-title {
+            font-size: 1.25rem;
+            font-weight: 800;
+            color: #000000;
+            border-bottom: 2px solid var(--slate-800);
+            padding-bottom: 6px;
+            margin-bottom: 18px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .sheet-q-list {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            flex: 1;
+        }
+
+        .sheet-q-item {
+            font-size: 1.05rem;
+            font-weight: 500;
+            color: #000000;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px dashed var(--slate-100);
+            padding-bottom: 8px;
+        }
+
+        .sheet-ans-space {
+            width: 90px;
+            height: 28px;
+            border: 1px solid var(--slate-400);
+            border-radius: 4px;
+            background: var(--slate-50);
+        }
+
+        /* ----------------------------------------------------
+           印刷用CSS (window.printシステム起動時の上書き設定)
+        ------------------------------------------------------- */
+        #print-delivery-area { display: none; }
+
+        @media print {
+            @page {
+                size: A4 landscape; /* A4用紙・横向き指定 */
+                margin: 8mm 10mm;
+            }
+            body, html {
+                background: white !important;
+                color: black !important;
+                height: auto !important;
+                overflow: visible !important;
+            }
+            /* ダッシュボードの全UIコンテナを完全に非表示化 */
+            .app-container {
+                display: none !important;
+            }
+            /* 印刷専用エリアのみを限界突破解放 */
+            #print-delivery-area {
+                display: grid !important;
+                grid-template-columns: 1fr 1fr !important; /* A4横に綺麗な2面付け */
+                column-gap: 16mm !important;
+                row-gap: 0px !important;
+                width: 100% !important;
+                background: white !important;
+            }
+            .print-real-sheet {
+                background: white !important;
+                box-sizing: border-box !important;
+                padding: 4mm 2mm !important;
+                page-break-inside: avoid !important;
+                display: flex !important;
+                flex-direction: column !important;
+                height: 185mm !important; /* A4横の中に最適に収まる高さ制限 */
+            }
+            /* 2枚(A4の左右)出力されるごとに次のA4用紙へ改ページ制御 */
+            .print-real-sheet:nth-child(2n) {
+                page-break-after: always !important;
+            }
+            .sheet-header-title {
+                font-size: 16pt !important;
+                border-bottom: 2px solid #000000 !important;
+                margin-bottom: 6mm !important;
+                padding-bottom: 2mm !important;
+            }
+            .sheet-q-item {
+                font-size: 13pt !important;
+                border-bottom: 1px dashed #cccccc !important;
+                padding-bottom: 4mm !important;
+                margin-bottom: 1mm !important;
+            }
+            .sheet-ans-space {
+                width: 30mm !important;
+                height: 9mm !important;
+                border: 1px solid #000000 !important;
+                background: transparent !important;
+            }
+        }
     </style>
 </head>
 <body>
 
 <div class="app-container">
 
+    <!-- ホームメインメニュー -->
     <div id="screen-home" class="screen active">
         <div class="panel-header">
             <h1>Education Tech Lab</h1>
@@ -317,9 +465,15 @@
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
                 全体概要（クラス一覧）
             </button>
+            <!-- 新設：PDFプリント印刷メニューボタン -->
+            <button class="btn" id="btn-nav-print" style="background: linear-gradient(135deg, #a855f7 0%, #6366f1 100%); box-shadow: 0 4px 14px rgba(99, 102, 241, 0.25);">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
+                問題プリントPDF印刷出力
+            </button>
         </div>
     </div>
 
+    <!-- 生徒別の学習記録画面 -->
     <div id="screen-records" class="screen">
         <div class="page-top-bar">
             <div class="page-title-side">
@@ -349,6 +503,7 @@
         </div>
     </div>
 
+    <!-- 全体概要（クラスサマリー）画面 -->
     <div id="screen-summary" class="screen">
         <div class="page-top-bar">
             <div class="page-title-side">
@@ -376,7 +531,52 @@
         </div>
     </div>
 
+    <!-- 新設：問題一覧・印刷範囲指定画面 -->
+    <div id="screen-print" class="screen">
+        <div class="page-top-bar">
+            <div class="page-title-side">
+                <h2>問題プリントの印刷出力設定</h2>
+            </div>
+            <button class="btn btn-secondary btn-to-home">ホームに戻る</button>
+        </div>
+
+        <div class="print-control-panel">
+            <div class="print-control-group">
+                <label for="print-select-alpha">分野選択:</label>
+                <select id="print-select-alpha" class="print-config-select">
+                    <option value="A">A　数と式</option>
+                    <option value="B">B　二次関数</option>
+                    <option value="C">C　三角比</option>
+                    <option value="D">D　集合と命題</option>
+                    <option value="E">E　データの分析</option>
+                </select>
+            </div>
+            <div class="print-control-group">
+                <label for="print-start-num">開始番号:</label>
+                <select id="print-start-num" class="print-config-select"></select>
+            </div>
+            <div class="print-control-group">
+                <label for="print-end-num">終了番号:</label>
+                <select id="print-end-num" class="print-config-select"></select>
+            </div>
+            <button class="btn btn-secondary" id="btn-build-print-preview" style="background:var(--slate-700) !important; color:white !important;">
+                プレビュー生成
+            </button>
+            <button class="btn" id="btn-execute-print" style="width:auto; padding:10px 24px; font-size:0.95rem; border-radius:12px; background:linear-gradient(135deg, #a855f7 0%, #6366f1 100%); display:none;">
+                プリンター・PDFへ出力
+            </button>
+        </div>
+
+        <div class="preview-responsive" id="print-preview-container">
+            <div style="color:var(--slate-400); text-align:center; padding:40px;">分野と範囲番号を指定して「プレビュー生成」を押してください。</div>
+        </div>
+    </div>
+
 </div>
+
+<!-- 印刷時のみブラウザに強制認識させるための独立配置エリア -->
+<div id="print-delivery-area"></div>
+
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
@@ -397,6 +597,11 @@
 
     let fetchedUsersMap = {}; 
 
+    // 単元対応表
+    const printUnitTitles = {
+        "A1": "正負の数の加法",
+    };
+
     function showScreen(screenId) {
         document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
         document.getElementById(screenId).classList.add('active');
@@ -411,6 +616,12 @@
         showScreen('screen-summary');
         await ensureUsersFetched();
         renderClassSummaryTable();
+    });
+
+    // 新規：印刷コントロールメニューへの遷移
+    document.getElementById('btn-nav-print').addEventListener('click', () => {
+        showScreen('screen-print');
+        initPrintConfigOptions();
     });
 
     document.querySelectorAll('.btn-to-home').forEach(btn => {
@@ -472,7 +683,6 @@
         }
 
         tbody.innerHTML = "";
-        
         const sortedDates = Object.keys(statsMap).sort((a, b) => a.localeCompare(b));
 
         sortedDates.forEach(date => {
@@ -480,40 +690,76 @@
             const displayDate = date.split('-').slice(1).join('/'); 
             const dailyRate = stats.total_questions ? Math.round((stats.total_correct / stats.total_questions) * 100) : 0;
 
-            let minQ = 0, maxQ = 0;
-            if (stats.print_numbers && stats.print_numbers.length > 0) {
-                minQ = Math.min(...stats.print_numbers);
-                maxQ = Math.max(...stats.print_numbers);
+            const dayPrints = stats.prints || {};
+            const gradeMap = {};
+
+            for (let printId in dayPrints) {
+                const m = printId.match(/([A-Z]+)(\d+)/);
+                if (m) {
+                    const grade = m[1];
+                    const num = parseInt(m[2]);
+                    if (!gradeMap[grade]) gradeMap[grade] = [];
+                    gradeMap[grade].push(num);
+                }
             }
 
-            let graphHtml = '<td class="td-progress-graph" colspan="10"><div class="graph-wrapper">';
-            for (let i = 0; i < 10; i++) {
-                const cellStart = i * 5 + 1; 
-                const cellEnd = (i + 1) * 5; 
+            if (Object.keys(gradeMap).length === 0 && stats.print_numbers && stats.print_numbers.length > 0) {
+                gradeMap['A'] = stats.print_numbers;
+            }
 
-                if (minQ > 0 && maxQ > 0) {
-                    if (minQ <= cellEnd && maxQ >= cellStart) {
-                        const overlapStart = Math.max(minQ, cellStart);
-                        const overlapEnd = Math.min(maxQ, cellEnd);
-                        const overlapCount = overlapEnd - overlapStart + 1;
-                        
-                        const fillPercent = (overlapCount / 5) * 100;
-                        const offsetPercent = ((overlapStart - cellStart) / 5) * 100;
-                        
-                        let label = `A${overlapStart}${overlapStart !== overlapEnd ? '-' + overlapEnd : ''}`;
-                        if (fillPercent === 100) label = `A${cellStart}-A${cellEnd}`;
-                        const showLabel = fillPercent >= 40 ? label : '';
-                        
-                        graphHtml += `
-                            <div class="graph-cell">
-                                <div class="progress-bar-fill" style="left: ${offsetPercent}%; width: ${fillPercent}%;">
-                                    ${showLabel}
-                                </div>
-                            </div>`;
-                        continue;
+            let graphHtml = '<td class="td-progress-graph" colspan="10" style="padding: 0px !important; vertical-align: stretch;"><div style="display: flex; flex-direction: column; height: 100%; width: 100%; min-height: 52px; justify-content: stretch; align-items: stretch;">';
+            const sortedGrades = Object.keys(gradeMap).sort();
+
+            if (sortedGrades.length === 0) {
+                graphHtml += '<div class="graph-wrapper">';
+                for(let i=0; i<10; i++) graphHtml += '<div class="graph-cell"></div>';
+                graphHtml += '</div>';
+            } else {
+                sortedGrades.forEach(g => {
+                    const nums = gradeMap[g];
+                    const minQ = Math.min(...nums);
+                    const maxQ = Math.max(...nums);
+                    
+                    let gColor = "#0ea5e9";
+                    switch(g) {
+                        case 'A': gColor = "#0ea5e9"; break;
+                        case 'B': gColor = "#16a34a"; break;
+                        case 'C': gColor = "#ea580c"; break;
+                        case 'D': gColor = "#9333ea"; break;
+                        case 'E': gColor = "#db2777"; break;
+                        case 'F': gColor = "#d97706"; break;
+                        case 'G': gColor = "#475569"; break;
                     }
-                }
-                graphHtml += `<div class="graph-cell"></div>`;
+                    
+                    graphHtml += `<div class="graph-wrapper">`;
+                    for (let i = 0; i < 10; i++) {
+                        const cellStart = i * 5 + 1; 
+                        const cellEnd = (i + 1) * 5; 
+
+                        if (minQ <= cellEnd && maxQ >= cellStart) {
+                            const overlapStart = Math.max(minQ, cellStart);
+                            const overlapEnd = Math.min(maxQ, cellEnd);
+                            const overlapCount = overlapEnd - overlapStart + 1;
+                            
+                            const fillPercent = (overlapCount / 5) * 100;
+                            const offsetPercent = ((overlapStart - cellStart) / 5) * 100;
+                            
+                            let label = `${g}${overlapStart}${overlapStart !== overlapEnd ? '-' + overlapEnd : ''}`;
+                            if (fillPercent === 100) label = `${g}${cellStart}-${g}${cellEnd}`;
+                            const showLabel = fillPercent >= 40 ? label : '';
+                            
+                            graphHtml += `
+                                <div class="graph-cell">
+                                    <div class="progress-bar-fill" style="left: ${offsetPercent}%; width: ${fillPercent}%; background: ${gColor};">
+                                        ${showLabel}
+                                    </div>
+                                </div>`;
+                        } else {
+                            graphHtml += `<div class="graph-cell"></div>`;
+                        }
+                    }
+                    graphHtml += '</div>';
+                });
             }
             graphHtml += '</div></td>';
 
@@ -589,6 +835,169 @@
             `;
             tbody.appendChild(tr);
         });
+    }
+
+    /* ==========================================================================
+       印刷システム機構モジュール
+       ========================================================================== */
+    function initPrintConfigOptions() {
+        const startSelect = document.getElementById('print-start-num');
+        const endSelect = document.getElementById('print-end-num');
+        
+        if (startSelect.children.length > 0) return; // 既に生成済みならスキップ
+
+        startSelect.innerHTML = "";
+        endSelect.innerHTML = "";
+        
+        for(let i = 1; i <= 50; i++) {
+            const optStart = document.createElement('option');
+            optStart.value = i;
+            optStart.innerText = `${i} 番`;
+            startSelect.appendChild(optStart);
+
+            const optEnd = document.createElement('option');
+            optEnd.value = i;
+            optEnd.innerText = `${i} 番`;
+            endSelect.appendChild(optEnd);
+        }
+        endSelect.value = 4; // 初期範囲を1~4に設定
+    }
+
+    document.getElementById('btn-build-print-preview').addEventListener('click', buildPrintHTMLData);
+    document.getElementById('btn-execute-print').addEventListener('click', () => { window.print(); });
+
+    async function buildPrintHTMLData() {
+        const alpha = document.getElementById('print-select-alpha').value;
+        const startNum = parseInt(document.getElementById('print-start-num').value);
+        const endNum = parseInt(document.getElementById('print-end-num').value);
+        
+        const previewContainer = document.getElementById('print-preview-container');
+        const hiddenPrintArea = document.getElementById('print-delivery-area');
+        
+        if (startNum > endNum) {
+            alert("開始番号は終了番号以下に設定してください。");
+            return;
+        }
+
+        previewContainer.innerHTML = "<div style='color:var(--slate-500); padding:40px;'>教材ファイルデータを読込中...</div>";
+        hiddenPrintArea.innerHTML = "";
+
+        let loadedSheets = [];
+
+        // 選択された範囲のファイルをすべて非同期一括取得
+        for (let i = startNum; i <= endNum; i++) {
+            const paddedNum = i.toString().padStart(2, '0');
+            const printId = `${alpha}${i}`;
+            const fileName = `${alpha}${paddedNum}.html`;
+
+            try {
+                const response = await fetch(`./${fileName}`);
+                if (!response.ok) throw new Error();
+                const htmlText = await response.text();
+                
+                const tempDiv = document.createElement('div');
+                tempDiv.innerHTML = htmlText;
+
+                const metaEl = tempDiv.querySelector('.print-meta');
+                const titleAttr = metaEl ? metaEl.getAttribute('data-title') : (printUnitTitles[printId] || "");
+                
+                const qElements = tempDiv.querySelectorAll('.q-data');
+                let questionsData = [];
+
+                qElements.forEach(el => {
+                    questionsData.push({
+                        isExample: el.getAttribute('data-is-example') === 'true',
+                        body: el.innerHTML
+                    });
+                });
+
+                loadedSheets.push({
+                    id: printId,
+                    title: titleAttr,
+                    questions: questionsData
+                });
+
+            } catch (err) {
+                console.warn(`${fileName} の取得に失敗したためスキップします。`);
+            }
+        }
+
+        if (loadedSheets.length === 0) {
+            previewContainer.innerHTML = "<div style='color:var(--danger); padding:40px; font-weight:700;'>指定された範囲のプリントファイルが1つも見つかりませんでした。</div>";
+            document.getElementById('btn-execute-print').style.display = 'none';
+            return;
+        }
+
+        previewContainer.innerHTML = "";
+
+        // 2枚ずつペアにしてA4横画面（見開き2面付け）のコンテナ構造を作成
+        for (let idx = 0; idx < loadedSheets.length; idx += 2) {
+            const pairContainer = document.createElement('div');
+            pairContainer.className = 'preview-sheet-pair';
+
+            // 左側（奇数番目）のプリント
+            const sheetLeft = loadedSheets[idx];
+            pairContainer.appendChild(createPrintHTMLNode(sheetLeft, false));
+            hiddenPrintArea.appendChild(createPrintHTMLNode(sheetLeft, true));
+
+            // 右側（偶数番目）のプリント（存在すれば配置）
+            if (idx + 1 < loadedSheets.length) {
+                const sheetRight = loadedSheets[idx + 1];
+                pairContainer.appendChild(createPrintHTMLNode(sheetRight, false));
+                hiddenPrintArea.appendChild(createPrintHTMLNode(sheetRight, true));
+            }
+
+            previewContainer.appendChild(pairContainer);
+        }
+
+        // MathJax数式レンダリングを再トリガー
+        if (window.MathJax && window.MathJax.typesetPromise) {
+            window.MathJax.typesetPromise([previewContainer, hiddenPrintArea]).catch(e => console.error(e));
+        }
+
+        // 印刷準備完了、実行ボタンを有効化
+        document.getElementById('btn-execute-print').style.display = 'inline-flex';
+    }
+
+    // 各プリントカードのHTMLノードを動的生成
+    function createPrintHTMLNode(sheetData, isRealPrint) {
+        const div = document.createElement('div');
+        div.className = isRealPrint ? 'print-real-sheet' : 'preview-print-card';
+
+        let qRowsHtml = "";
+        sheetData.questions.forEach((q, i) => {
+            let label = q.isExample ? "(例)" : `(${i})`;
+            let text = q.body;
+
+            // 数式デリミタ自動補正
+            if (!text.includes('\\(') && !text.includes('$')) {
+                let numMatch = text.match(/^(\([^)]+\))\s*/);
+                if (numMatch) {
+                    label = numMatch[1];
+                    text = text.substring(numMatch[0].length);
+                }
+                text = text.replace(/÷/g, '\\div').replace(/×/g, '\\times').replace(/(\d+)\/(\d+)/g, '\\frac{$1}{$2}');
+                text = `\\(${text}\\)`;
+            }
+
+            qRowsHtml += `
+                <div class="sheet-q-item">
+                    <div><span style="font-weight:700; margin-right:8px;">${label}</span>${text}</div>
+                    <div class="sheet-ans-space"></div>
+                </div>
+            `;
+        });
+
+        div.innerHTML = `
+            <div class="sheet-header-title">
+                <div>${sheetData.id}　${sheetData.title}</div>
+                <div style="font-size:0.85rem; font-weight:400; color:var(--slate-500);">Education Tech Lab</div>
+            </div>
+            <div class="sheet-q-list">
+                ${qRowsHtml}
+            </div>
+        `;
+        return div;
     }
 </script>
 </body>
